@@ -83,7 +83,7 @@ router.get('/payments/status', async (req, res, next) => {
       endToEndId,
       result: null,
       error: lookupUnavailable
-        ? 'Status lookup is not available on the ledger API yet. Use the pain.002 from your payment submission, or enable USE_FIXTURES=true.'
+        ? 'Payment lookup is not available on the ledger API yet. Check the status shown when you submitted the payment, or enable USE_FIXTURES=true.'
         : error.message,
       lookupUnavailable,
     });

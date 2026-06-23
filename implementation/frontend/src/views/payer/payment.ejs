@@ -3,11 +3,11 @@
 
 <div class="page-header">
   <h1>New payment</h1>
-  <p class="lead">Submit a <strong>pain.001</strong> credit transfer from <%= account.owner.nm %> · <%= account.bal.value %> <%= account.bal.ccy %> available</p>
+  <p class="lead">Send money from <%= account.owner.nm %> · <%= account.bal.value %> <%= account.bal.ccy %> available</p>
 </div>
 
 <div class="alert info">
-  <strong>Demo tip:</strong> submit <code>2000.00</code> to trigger an <strong>RJCT</strong> / <strong>AM04</strong> insufficient-funds rejection.
+  <strong>Demo tip:</strong> try amount <code>2000.00</code> to see a <strong>rejected</strong> payment due to insufficient funds.
 </div>
 
 <% if (error) { %>
@@ -16,11 +16,11 @@
 
 <div class="grid-2">
   <section class="card">
-    <h2>Payment details</h2>
+    <h2><%- include('../partials/term', terms.pain001) %></h2>
     <form class="stack" method="post" action="/payer/payment/new">
       <label>
-        EndToEndId
-        <span class="muted" style="font-weight:400"> — idempotency key</span>
+        <%- include('../partials/term', terms.endToEndId) %>
+        <span class="muted" style="font-weight:400"> — <%- include('../partials/term', terms.idempotency) %></span>
         <input class="mono" name="endToEndId" maxlength="35" required value="<%= defaults.endToEndId %>" />
       </label>
       <label>
@@ -28,39 +28,47 @@
         <input name="amount" required pattern="^[0-9]+(\.[0-9]+)?$" value="<%= defaults.amount %>" />
       </label>
       <label>
-        Creditor account
+        Beneficiary account
         <input class="mono" name="creditorAccountId" required value="<%= supplierAccountId %>" />
       </label>
       <label>
-        Remittance
+        Payment description
         <span class="muted" style="font-weight:400"> — optional</span>
         <input name="remittance" value="<%= defaults.remittance %>" />
       </label>
-      <button class="btn btn-lg" type="submit" style="width:100%">Submit pain.001</button>
+      <button class="btn btn-lg" type="submit" style="width:100%">Send payment</button>
     </form>
   </section>
 
   <section class="card">
     <div class="card-section-title">
-      <h2>Status report</h2>
-      <span class="badge ok">pain.002</span>
+      <h2><%- include('../partials/term', terms.pain002) %></h2>
     </div>
     <% if (!result) { %>
     <div class="empty-state">
-      <p>Submit a payment to receive the pain.002 response.</p>
-      <p class="muted" style="font-size:0.85rem">Successful payments redirect to your dashboard with updated balance.</p>
+      <p>Submit a payment to see whether it was accepted or rejected.</p>
+      <p class="muted" style="font-size:0.85rem">Successful payments redirect to your dashboard with an updated balance.</p>
     </div>
     <% } else { %>
     <% const tx = result.orgnlPmtInfAndSts?.[0]?.txInfAndSts?.[0]; %>
-    <p>Group status <strong><%= result.orgnlGrpInfAndSts.grpSts %></strong></p>
+    <p>Overall result <strong><%= result.orgnlGrpInfAndSts.grpSts === 'ACSC' ? 'Settled' : result.orgnlGrpInfAndSts.grpSts === 'RJCT' ? 'Rejected' : result.orgnlGrpInfAndSts.grpSts %></strong></p>
     <% if (tx) { %>
-    <p style="margin-top:1rem">EndToEndId<br><span class="mono"><%= tx.orgnlEndToEndId %></span></p>
+    <p style="margin-top:1rem"><%- include('../partials/term', terms.endToEndId) %><br><span class="mono"><%= tx.orgnlEndToEndId %></span></p>
     <p style="margin-top:0.75rem">
-      Transaction status
-      <span class="badge <%= tx.txSts === 'ACSC' ? 'ok' : 'err' %>"><%= tx.txSts %></span>
+      <%- include('../partials/term', terms.txStatus) %>
+      <%- include('../partials/status-badge', { code: tx.txSts, statusInfo: formatTxStatus(tx.txSts) }) %>
     </p>
     <% if (tx.stsRsnInf?.length) { %>
-    <p style="margin-top:0.75rem">Reason <span class="mono"><%= tx.stsRsnInf[0].rsn.cd %></span></p>
+    <% const reason = formatReasonCode(tx.stsRsnInf[0].rsn.cd); %>
+    <p style="margin-top:0.75rem">
+      <span class="term-hint" tabindex="0">
+        <span class="term-label"><%= reason.label %></span>
+        <span class="term-tooltip" role="tooltip">
+          <span class="term-technical"><%= tx.stsRsnInf[0].rsn.cd %> (<%= terms.reasonCode.technical %>)</span>
+          <%= reason.definition %>
+        </span>
+      </span>
+    </p>
     <p class="muted"><%= tx.stsRsnInf[0].addtlInf?.join(' ') %></p>
     <% } %>
     <p style="margin-top:1.25rem">
@@ -68,7 +76,7 @@
     </p>
     <% } %>
     <details>
-      <summary>Raw JSON response</summary>
+      <summary>Technical response (JSON)</summary>
       <pre class="mono"><%= JSON.stringify(result, null, 2) %></pre>
     </details>
     <% } %>

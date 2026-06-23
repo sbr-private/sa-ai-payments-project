@@ -6,14 +6,14 @@
     cursor — current cursor (optional)
 %>
 <% if (!statement?.stmt?.ntry?.length) { %>
-<div class="empty-state"><p>No statement entries yet.</p></div>
+<div class="empty-state"><p>No transactions on this statement yet.</p></div>
 <% } else { %>
 <div class="table-wrap">
   <table>
     <thead>
       <tr>
         <th>Date</th>
-        <th>EndToEndId</th>
+        <th><%- include('term', terms.endToEndId) %></th>
         <th>Direction</th>
         <th>Amount</th>
       </tr>
@@ -30,7 +30,13 @@
           <%= e2e %>
           <% } else { %>—<% } %>
         </td>
-        <td><span class="<%= entry.cdtDbtInd === 'CRDT' ? 'direction-crdt' : 'direction-dbit' %>"><%= entry.cdtDbtInd %></span></td>
+        <td>
+          <% if (entry.cdtDbtInd === 'CRDT') { %>
+          <span class="direction-crdt"><%- include('term', terms.directionCrdt) %></span>
+          <% } else { %>
+          <span class="direction-dbit"><%- include('term', terms.directionDbit) %></span>
+          <% } %>
+        </td>
         <td><strong><%= entry.amt.value %></strong> <%= entry.amt.ccy %></td>
       </tr>
       <% }) %>

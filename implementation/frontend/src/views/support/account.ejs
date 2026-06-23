@@ -20,14 +20,13 @@
   <section class="card">
     <h2>Account details</h2>
     <p>Currency <strong><%= account.ccy %></strong></p>
-    <p>Created <span class="mono"><%= account.creDtTm %></span></p>
+    <p>Opened <span class="mono"><%= account.creDtTm %></span></p>
   </section>
 </div>
 
 <section class="card">
   <div class="card-section-title">
-    <h2>Statement</h2>
-    <span class="badge ok">camt.053</span>
+    <h2><%- include('../partials/term', terms.camt053) %></h2>
   </div>
   <%- include('../partials/statement-table', {
     statement,

@@ -8,9 +8,9 @@
 
 <% if (paymentSuccess && paymentEndToEndId) { %>
 <div class="alert success">
-  Payment <span class="mono"><%= paymentEndToEndId %></span> settled successfully (<strong>ACSC</strong>).
+  Payment <span class="mono"><%= paymentEndToEndId %></span> settled successfully.
   Your balance and statement have been updated.
-  <a href="/payer/payments/status?endToEndId=<%= encodeURIComponent(paymentEndToEndId) %>">View pain.002 →</a>
+  <a href="/payer/payments/status?endToEndId=<%= encodeURIComponent(paymentEndToEndId) %>">View payment status →</a>
 </div>
 <% } %>
 
@@ -42,19 +42,19 @@
   </section>
 
   <section class="card">
-    <h2>ISO 20022 messages</h2>
+    <h2>What you can do</h2>
     <ul class="iso-list">
       <li>
-        <span class="iso-code">pain.001</span>
-        <span>Submit credit transfer initiation</span>
+        <span class="iso-code"><%- include('../partials/term', terms.pain001) %></span>
+        <span>Send money to a supplier or beneficiary</span>
       </li>
       <li>
-        <span class="iso-code">pain.002</span>
-        <span><a href="/payer/payments/status">Look up payment status</a></span>
+        <span class="iso-code"><%- include('../partials/term', terms.pain002) %></span>
+        <span><a href="/payer/payments/status">Check whether a payment settled</a></span>
       </li>
       <li>
-        <span class="iso-code">camt.053</span>
-        <span>Account statement entries below</span>
+        <span class="iso-code"><%- include('../partials/term', terms.camt053) %></span>
+        <span>Review credits and debits below</span>
       </li>
     </ul>
   </section>
@@ -62,8 +62,7 @@
 
 <section class="card">
   <div class="card-section-title">
-    <h2>Account statement</h2>
-    <span class="badge ok">camt.053</span>
+    <h2><%- include('../partials/term', terms.camt053) %></h2>
   </div>
   <%- include('../partials/statement-table', {
     statement,

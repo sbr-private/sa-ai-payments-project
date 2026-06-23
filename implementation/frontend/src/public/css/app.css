@@ -506,6 +506,10 @@ form.stack input.mono {
   margin: 0 -0.25rem;
 }
 
+.table-wrap th .term-hint {
+  white-space: nowrap;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -777,6 +781,84 @@ td a {
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* Glossary / ISO term tooltips */
+.term-hint {
+  position: relative;
+  display: inline;
+  border-bottom: 1px dashed var(--lg-gray-light1);
+  cursor: help;
+}
+
+.term-hint.term-hint-block {
+  display: inline-block;
+}
+
+.term-label {
+  font-weight: inherit;
+}
+
+.term-hint.badge .term-label {
+  border-bottom: none;
+}
+
+.term-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 260px;
+  padding: 0.65rem 0.8rem;
+  background: var(--lg-black);
+  color: var(--lg-white);
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.45;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, visibility 0.15s;
+  z-index: 200;
+  text-align: left;
+}
+
+.term-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--lg-black);
+}
+
+.term-technical {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--lg-green-base);
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.term-hint:hover .term-tooltip,
+.term-hint:focus-visible .term-tooltip,
+.term-hint:focus-within .term-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.badge.term-hint {
+  border-bottom: none;
+  cursor: help;
+}
+
+.badge.term-hint .term-tooltip {
+  font-size: 0.75rem;
 }
 
 /* ISO info list */

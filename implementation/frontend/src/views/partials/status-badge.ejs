@@ -1,0 +1,8 @@
+<% const info = typeof statusInfo !== 'undefined' ? statusInfo : { label: code, definition: '' }; %>
+<span class="badge <%= code === 'ACSC' ? 'ok' : code === 'RJCT' ? 'err' : 'warn' %> term-hint" tabindex="0">
+  <span class="term-label"><%= info.label %></span>
+  <span class="term-tooltip" role="tooltip">
+    <span class="term-technical"><%= code %> (txSts)</span>
+    <%= info.definition %>
+  </span>
+</span>

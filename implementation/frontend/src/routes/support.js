@@ -9,8 +9,8 @@ const router = Router();
 router.use(requireAuth, requireRole('support'));
 
 const hints = [
-  { id: config.seed.demoE2eSuccess, label: 'Successful payment (ACSC)' },
-  { id: config.seed.demoE2eRejected, label: 'Rejected payment (RJCT / AM04)' },
+  { id: config.seed.demoE2eSuccess, label: 'Settled payment example' },
+  { id: config.seed.demoE2eRejected, label: 'Rejected — insufficient funds' },
 ];
 
 router.get('/', (req, res) => {
@@ -50,7 +50,7 @@ router.get('/search', async (req, res) => {
       endToEndId,
       result: null,
       error: lookupUnavailable
-        ? 'Transaction lookup is not available on the ledger API yet. Enable USE_FIXTURES=true or wait for GET /payment-initiations/transactions/{endToEndId}.'
+        ? 'Payment lookup is not available on the ledger API yet. Enable USE_FIXTURES=true or wait for the transaction lookup endpoint.'
         : error.message,
       lookupUnavailable,
       debtorAccountId: debtorAccountForE2e(endToEndId),

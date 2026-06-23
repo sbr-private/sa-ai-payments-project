@@ -3,19 +3,19 @@
 
 <div class="page-header">
   <h1>Control centre</h1>
-  <p class="lead">Investigate payments by <strong>endToEndId</strong> — pain.002 lookup for support agents</p>
+  <p class="lead">Investigate payments by <%- include('../partials/term', terms.endToEndId) %></p>
 </div>
 
 <section class="card">
   <form class="stack" method="get" action="/support/search">
     <label>
-      EndToEndId
+      <%- include('../partials/term', terms.endToEndId) %>
       <input class="mono" name="endToEndId" maxlength="35" required value="<%= endToEndId %>" placeholder="E2E-INV-2024-0999" />
     </label>
-    <button class="btn" type="submit">Search transaction</button>
+    <button class="btn" type="submit">Search payment</button>
   </form>
 
-  <p class="muted" style="margin:1rem 0 0;font-size:0.85rem">Quick links:
+  <p class="muted" style="margin:1rem 0 0;font-size:0.85rem">Examples:
     <% hints.forEach(function(hint, index) { %>
     <a href="/support/search?endToEndId=<%= encodeURIComponent(hint.id) %>"><%= hint.label %></a><%= index < hints.length - 1 ? ' ·' : '' %>
     <% }) %>
@@ -29,29 +29,38 @@
 <% if (result) { %>
 <section class="card">
   <div class="card-section-title">
-    <h2>Transaction result</h2>
-    <span class="badge <%= result.txSts === 'ACSC' ? 'ok' : result.txSts === 'RJCT' ? 'err' : 'warn' %>"><%= result.txSts %></span>
+    <h2>Payment result</h2>
+    <%- include('../partials/status-badge', { code: result.txSts, statusInfo: formatTxStatus(result.txSts) }) %>
   </div>
-  <p>EndToEndId<br><span class="mono"><%= result.orgnlEndToEndId %></span></p>
+  <p><%- include('../partials/term', terms.endToEndId) %><br><span class="mono"><%= result.orgnlEndToEndId %></span></p>
 
   <% if (result.stsRsnInf?.length) { %>
-  <h3 style="margin-top:1.5rem;font-size:0.9rem">Status reason (stsRsnInf)</h3>
-  <% result.stsRsnInf.forEach(function(reason) { %>
-  <p>Code <span class="mono"><%= reason.rsn.cd %></span></p>
-  <% if (reason.addtlInf?.length) { %>
-  <p class="muted"><%= reason.addtlInf.join(' ') %></p>
+  <h3 style="margin-top:1.5rem;font-size:0.9rem"><%- include('../partials/term', terms.rejectionReason) %></h3>
+  <% result.stsRsnInf.forEach(function(item) { %>
+  <% const reason = formatReasonCode(item.rsn.cd); %>
+  <p>
+    <span class="term-hint" tabindex="0">
+      <span class="term-label"><%= reason.label %></span>
+      <span class="term-tooltip" role="tooltip">
+        <span class="term-technical"><%= item.rsn.cd %> (<%= terms.reasonCode.technical %>)</span>
+        <%= reason.definition %>
+      </span>
+    </span>
+  </p>
+  <% if (item.addtlInf?.length) { %>
+  <p class="muted"><%= item.addtlInf.join(' ') %></p>
   <% } %>
   <% }) %>
   <% } %>
 
   <% if (debtorAccountId) { %>
   <p style="margin-top:1.5rem">
-    <a class="btn ghost" href="/support/accounts/<%= debtorAccountId %>">Drill into debtor account →</a>
+    <a class="btn ghost" href="/support/accounts/<%= debtorAccountId %>">View payer account →</a>
   </p>
   <% } %>
 
   <details>
-    <summary>Raw JSON response</summary>
+    <summary>Technical response (JSON)</summary>
     <pre class="mono"><%= JSON.stringify(result, null, 2) %></pre>
   </details>
 </section>

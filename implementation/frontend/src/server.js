@@ -3,6 +3,7 @@ import session from 'express-session';
 import path from 'node:path';
 import { config } from './config.js';
 import { attachUser } from './middleware/auth.js';
+import { terms, formatTxStatus, formatReasonCode } from './lib/glossary.js';
 import { errorHandler, notFoundHandler, publicPath, viewsPath } from './middleware/errorHandler.js';
 import authRoutes from './routes/auth.js';
 import payerRoutes from './routes/payer.js';
@@ -14,6 +15,9 @@ const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', viewsPath);
+app.locals.terms = terms;
+app.locals.formatTxStatus = formatTxStatus;
+app.locals.formatReasonCode = formatReasonCode;
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
