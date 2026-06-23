@@ -51,6 +51,7 @@ At minimum, deliver:
 3. **MongoDB adapter** — persistence using the reference document model or an equivalent design that satisfies the spec.
 4. **Scenario suite** — automated tests that execute SC-001 through SC-015 against each adapter.
 5. **Demo surfaces** — payer UI, control centre, and a benchmark CLI (or equivalent) as described in [PURPOSE.md](docs/PURPOSE.md).
+6. **Resilience suite** — fault-injection tests RT-001 through RT-006 per [resilience/RESILIENCE.md](docs/resilience/RESILIENCE.md) (RT-007 optional).
 
 You may structure this as a monorepo, multiple repositories, a single service with embedded UI, or separate deployable components. The reference architecture below is a suggestion, not a mandate.
 
@@ -99,7 +100,7 @@ Adapters may store amounts as minor-unit integers internally. The API must round
 4. Study one adapter reference schema (PostgreSQL or MongoDB).
 5. Implement the API against one backend; prove compliance with the scenario suite.
 6. Implement the second adapter; confirm identical scenario results.
-7. Add demo UIs, seed loading, and benchmarks.
+7. Add demo UIs, seed loading, benchmarks, and resilience tests.
 
 To prepare a local database from the reference materials:
 
@@ -185,7 +186,7 @@ An adapter is spec-compliant when:
 2. API payloads validate against [openapi.yaml](docs/openapi.yaml)
 3. Domain invariants in [SPEC.md](docs/SPEC.md) hold after every operation
 
-Scenarios authenticate with `X-Demo-User: benchmark@demo` or equivalent test setup. Auth is not part of pass/fail criteria.
+Scenarios authenticate with `X-Demo-User: benchmark@demo` or equivalent test setup. Auth is not part of pass/fail criteria. Scenarios, performance benchmarks, and resilience tests exercise the **HTTP API** for verification — see [scenarios/README.md](docs/scenarios/README.md#test-boundary), [benchmarks/PERFORMANCE.md](docs/benchmarks/PERFORMANCE.md#test-boundary), and [resilience/README.md](docs/resilience/README.md#test-boundary).
 
 | ID | Title |
 |----|-------|
@@ -218,6 +219,8 @@ Scenarios authenticate with `X-Demo-User: benchmark@demo` or equivalent test set
 | [docs/iso20022/MAPPING.md](docs/iso20022/MAPPING.md) | ISO XML to JSON, minor-unit conversion |
 | [docs/openapi.yaml](docs/openapi.yaml) | API contract |
 | [docs/scenarios/](docs/scenarios/) | Acceptance scenarios |
+| [docs/benchmarks/PERFORMANCE.md](docs/benchmarks/PERFORMANCE.md) | Performance benchmark specification |
+| [docs/resilience/](docs/resilience/) | Resilience tests RT-001–RT-007 |
 | [docs/fixtures/](docs/fixtures/) | Golden JSON examples |
 | [docs/adapters/](docs/adapters/) | PostgreSQL and MongoDB reference schemas |
 

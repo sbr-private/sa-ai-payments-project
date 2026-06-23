@@ -17,6 +17,7 @@ We are not building a toy CRUD app. We are building a **minimal but realistic** 
 | Comparison dimension | What we measure |
 |---------------------|-----------------|
 | **Correctness** | All acceptance scenarios pass identically |
+| **Resilience** | No partial settlement under API/DB failure; see [resilience/](./resilience/) |
 | **Concurrency** | Race conditions, duplicate `EndToEndId`, lost updates |
 | **Read patterns** | Balance lookups, statement history, support-style searches |
 | **Write throughput** | Initiation TPS under load |
@@ -158,7 +159,8 @@ We have succeeded when:
 1. A solutions engineer can run the payer + support demos **without reading source code**
 2. All 15 acceptance scenarios pass on **every** database adapter
 3. Benchmark results exist for each adapter on the same hardware profile
-4. A prospect technical stakeholder can ask *"how would this work on MongoDB vs Postgres?"* and get a live answer
+4. Resilience tests RT-001–RT-006 are documented per adapter (pass, fail, or observed behaviour)
+5. A prospect technical stakeholder can ask *"how would this work on MongoDB vs Postgres?"* and get a live answer
 
 ---
 

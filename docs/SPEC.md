@@ -60,7 +60,7 @@ A database adapter is **spec-compliant** when:
 
 1. It exposes the REST API in [Section 4](#4-api-contract) and [openapi.yaml](./openapi.yaml).
 2. Request/response payloads validate against the ISO 20022–aligned schemas in OpenAPI.
-3. All acceptance scenarios in [docs/scenarios/](./scenarios/) pass.
+3. All acceptance scenarios in [docs/scenarios/](./scenarios/) pass via the running HTTP API (not direct database access).
 4. Domain invariants in [Section 3](#3-domain-model) hold after every operation.
 5. Concurrency ([Section 6](#6-concurrency--consistency)) and idempotency ([Section 7](#7-idempotency)) requirements are met.
 
@@ -501,6 +501,8 @@ Returns camt.053–aligned `ntry` list, newest first, cursor-paginated.
 
 **Endpoint:** `GET /health` → `{ "status": "ok" }`
 
+Implementers **should** also expose `GET /ready` returning `200` when the database is reachable and `503` when it is not. Used by resilience tests ([resilience/RESILIENCE.md](./resilience/RESILIENCE.md)). Not required for SC-001–SC-015.
+
 ---
 
 ## 6. Concurrency & Consistency
@@ -588,37 +590,34 @@ Adapters MAY store minor-unit integers internally. Conversion rules in [iso20022
 
 ## 11. Comparison Harness
 
-### Who sends the load?
+Performance benchmarks compare PostgreSQL and MongoDB adapters under controlled load. Full specification: **[benchmarks/PERFORMANCE.md](./benchmarks/PERFORMANCE.md)**.
 
-A dedicated **`apps/benchmarks/` CLI** — not the payer UI, control centre, or demo users. It drives the API directly with concurrent HTTP clients (e.g. k6 or a small custom runner).
+Summary:
 
-```
-benchmarks run --adapter=postgres --suite=write-heavy
-```
-
-The harness authenticates as `benchmark@demo` via `X-Demo-User` header on every request. No login round-trip in the hot path.
-
-### Suites
-
-| Suite | Mix | Purpose |
-|-------|-----|---------|
-| **Correctness** | — | Runs SC-001–SC-015 (uses `benchmark@demo` or direct header; not measured) |
-| **Write-heavy** | 100% `POST /payment-initiations` | Transfer TPS |
-| **Read-heavy** | 80% GET balance/statement, 20% writes | Support-style read patterns |
-| **Mixed** | 50/50 read/write | Realistic combined load |
-| **Seed profile** | Bulk setup | 10K accounts, 1M transfers before timed run |
-
-### Metrics (per adapter)
-
-p50/p95/p99 latency per endpoint, TPS, error rate, conflict/retry rate, storage size after seed.
-
-Results written to `benchmarks/results/<adapter>/<date>.json`.
-
-Pass criteria: correctness scenarios green; perf numbers recorded (not gated).
+- **Boundary:** HTTP API only — same path as UIs and demos; not direct database access ([benchmarks/PERFORMANCE.md](./benchmarks/PERFORMANCE.md#test-boundary)).
+- **Harness:** `implementation/benchmarks/` CLI (not the UI); authenticates as `benchmark@demo` via `X-Demo-User` on every request; no login in the hot path.
+- **Suites:** `correctness` (SC-001–SC-015, not timed), `write-heavy`, `read-heavy`, `mixed`, `seed-profile` (10K accounts, 1M transfers).
+- **Metrics:** p50/p95/p99 latency per endpoint, TPS, error rate, reject rate, storage after seed.
+- **Results:** `implementation/benchmarks/results/<adapter>/<suite>-<timestamp>.json`
+- **Pass criteria:** correctness scenarios green; perf numbers recorded per adapter (not gated for v1 compliance).
 
 ---
 
-## 12. Out of Scope (v1)
+## 12. Resilience Testing
+
+Fault-injection tests verify that atomic settlement and balance integrity survive process and infrastructure failures. Full specification: **[resilience/RESILIENCE.md](./resilience/RESILIENCE.md)**.
+
+Summary:
+
+- **Boundary:** faults injected at API/database/network layer; assertions via HTTP API ([resilience/README.md](./resilience/README.md#test-boundary)).
+- **Harness:** `implementation/resilience/` (or combined with benchmarks); RT-001–RT-007.
+- **Required:** RT-001–RT-006 per adapter; RT-007 (database failover) optional when HA is available.
+- **Invariants:** no partial settlement; double-entry preserved; idempotency on client retry (RT-004).
+- **Pass criteria:** recommended for training completion; not gated for v1 correctness compliance.
+
+---
+
+## 13. Out of Scope (v1)
 
 - pain.008 (direct debit), pain.007 (reversal), pacs.008 (interbank)
 - XML-only interfaces (JSON is required; XML optional)
@@ -678,3 +677,17 @@ Full narrative: [SEED.md](./SEED.md)
 | [fixtures/seed-users.json](./fixtures/seed-users.json) | JSON | Demo login users (API config, not in DB) |
 
 Demo seed is for UI demos and smoke tests. Compliance scenarios (Appendix A) use independent setup.
+
+## Appendix D: Resilience Test Index
+
+| ID | Title | File |
+|----|-------|------|
+| RT-001 | API process killed during transfer | [resilience/RT-001-api-process-kill.md](./resilience/RT-001-api-process-kill.md) |
+| RT-002 | Database unavailable during transfer | [resilience/RT-002-database-unavailable.md](./resilience/RT-002-database-unavailable.md) |
+| RT-003 | Database restart and recovery | [resilience/RT-003-database-restart.md](./resilience/RT-003-database-restart.md) |
+| RT-004 | Client timeout and idempotent retry | [resilience/RT-004-client-timeout-retry.md](./resilience/RT-004-client-timeout-retry.md) |
+| RT-005 | API restart under concurrent load | [resilience/RT-005-api-restart-concurrent.md](./resilience/RT-005-api-restart-concurrent.md) |
+| RT-006 | Read paths during database outage | [resilience/RT-006-read-during-outage.md](./resilience/RT-006-read-during-outage.md) |
+| RT-007 | Database node failover (optional) | [resilience/RT-007-database-failover.md](./resilience/RT-007-database-failover.md) |
+
+Full harness specification: [resilience/RESILIENCE.md](./resilience/RESILIENCE.md)
