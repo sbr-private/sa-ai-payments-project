@@ -83,6 +83,7 @@ mvn spring-boot:run
 | Credit account (test) | `POST http://localhost:8080/v1/test/accounts/{id}/credit` |
 | Close account (test) | `POST http://localhost:8080/v1/test/accounts/{id}/close` |
 | Initiate payment | `POST http://localhost:8080/v1/payment-initiations` |
+| Transaction status | `GET http://localhost:8080/v1/payment-initiations/transactions/{endToEndId}` |
 | Account statement | `GET http://localhost:8080/v1/accounts/{id}/statements` |
 
 `/health` and `/auth/login` are public. All other routes require `X-Demo-User: <email>` (e.g. `benchmark@demo`).
@@ -185,14 +186,17 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 
 | Done | Pending |
 |------|---------|
-| Spring Boot scaffold | `GET /payment-initiations/transactions/{endToEndId}` |
-| `/v1/health`, `/v1/ready` | Rejection paths (AM04, AC04, AG01, …) |
-| Demo auth (`POST /auth/login`, `X-Demo-User`) | Idempotency replay / conflict (SC-004, SC-005) |
-| `POST /accounts`, `GET /accounts/{id}` — Mongo | Statement pagination (SC-011) |
-| Test helpers — `POST /test/accounts/{id}/credit`, `/close` | PostgreSQL adapter operations (fast follow) |
-| `POST /payment-initiations` — Mongo (SC-002 happy path) | Scenario tests (SC-001–SC-015) |
-| `GET /accounts/{id}/statements` — Mongo (basic list) | Concurrency hardening (SC-010) |
+| Spring Boot scaffold | Statement pagination (SC-011) |
+| `/v1/health`, `/v1/ready` | PostgreSQL adapter operations (fast follow) |
+| Demo auth (`POST /auth/login`, `X-Demo-User`) | Scenario tests (SC-001–SC-015) |
+| `POST /accounts`, `GET /accounts/{id}` — Mongo | Concurrency hardening (SC-010) |
+| Test helpers — `POST /test/accounts/{id}/credit`, `/close` | |
+| `POST /payment-initiations` — Mongo (SC-002 happy path) | |
+| `GET /accounts/{id}/statements` — Mongo (basic list) | |
 | Sample data loader (`LOAD_SAMPLE_DATA=true`) | |
+| Rejection paths — AM04, AC04, AG01, AM12, CURR, BE01 | |
+| Idempotency replay / conflict — SC-004, SC-005 | |
+| `GET /payment-initiations/transactions/{endToEndId}` | |
 
 ## Package layout (planned)
 

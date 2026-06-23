@@ -2,11 +2,12 @@ package com.payments.ledger.domain.service;
 
 import com.payments.ledger.api.dto.payment.CustomerCreditTransferInitiationRequest;
 import com.payments.ledger.api.dto.payment.CustomerPaymentStatusReportResponse;
+import com.payments.ledger.api.mapper.PaymentStatusMapper;
 import com.payments.ledger.domain.auth.DemoUser;
 import com.payments.ledger.domain.auth.PaymentAccess;
+import com.payments.ledger.domain.exception.PaymentTransactionNotFoundException;
 import com.payments.ledger.domain.model.Money;
 import com.payments.ledger.domain.model.PaymentTransaction;
-import com.payments.ledger.domain.model.StatusReason;
 import com.payments.ledger.domain.model.TransactionStatus;
 import com.payments.ledger.domain.model.TransferCommand;
 import com.payments.ledger.domain.model.TransferOutcome;
@@ -28,9 +29,22 @@ public class PaymentService {
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(java.time.ZoneOffset.UTC);
 
   private final LedgerRepository ledgerRepository;
+  private final PaymentStatusMapper paymentStatusMapper;
 
-  public PaymentService(LedgerRepository ledgerRepository) {
+  public PaymentService(LedgerRepository ledgerRepository, PaymentStatusMapper paymentStatusMapper) {
     this.ledgerRepository = ledgerRepository;
+    this.paymentStatusMapper = paymentStatusMapper;
+  }
+
+  public CustomerPaymentStatusReportResponse.TransactionStatusInfoDto getTransactionStatus(
+      String endToEndId, DemoUser requester) {
+    PaymentTransaction transaction =
+        ledgerRepository
+            .findByEndToEndId(endToEndId)
+            .orElseThrow(() -> new PaymentTransactionNotFoundException(endToEndId));
+
+    PaymentAccess.requireCanViewTransaction(requester, transaction);
+    return paymentStatusMapper.toStatusInfo(transaction);
   }
 
   public PaymentInitiationResult initiate(
@@ -61,7 +75,7 @@ public class PaymentService {
         lastOutcome = ledgerRepository.settleTransfer(command);
         PaymentTransaction transaction = lastOutcome.getTransaction();
 
-        txStatuses.add(toStatusInfo(transaction));
+        txStatuses.add(paymentStatusMapper.toStatusInfo(transaction));
 
         if (lastOutcome.isConflict()) {
           txStatuses.set(
@@ -101,27 +115,6 @@ public class PaymentService {
     } catch (IllegalArgumentException | ArithmeticException ex) {
       return new Money(0, dto.getCcy());
     }
-  }
-
-  private CustomerPaymentStatusReportResponse.TransactionStatusInfoDto toStatusInfo(
-      PaymentTransaction transaction) {
-    List<CustomerPaymentStatusReportResponse.StatusReasonInformationDto> reasons =
-        transaction.getStatusReasons().stream()
-            .map(this::toReasonDto)
-            .toList();
-
-    List<CustomerPaymentStatusReportResponse.StatusReasonInformationDto> reasonList =
-        reasons.isEmpty() ? null : reasons;
-
-    return new CustomerPaymentStatusReportResponse.TransactionStatusInfoDto(
-        transaction.getEndToEndId(), transaction.getStatus(), reasonList);
-  }
-
-  private CustomerPaymentStatusReportResponse.StatusReasonInformationDto toReasonDto(
-      StatusReason reason) {
-    return new CustomerPaymentStatusReportResponse.StatusReasonInformationDto(
-        new CustomerPaymentStatusReportResponse.ReasonCodeDto(reason.getCode()),
-        reason.getAdditionalInfo().isEmpty() ? null : reason.getAdditionalInfo());
   }
 
   private CustomerPaymentStatusReportResponse buildReport(

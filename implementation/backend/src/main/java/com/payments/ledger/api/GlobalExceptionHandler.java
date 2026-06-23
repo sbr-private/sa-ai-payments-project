@@ -5,6 +5,7 @@ import com.payments.ledger.api.error.InvalidCredentialsException;
 import com.payments.ledger.domain.auth.UnauthorizedException;
 import com.payments.ledger.domain.exception.AccountNotFoundException;
 import com.payments.ledger.domain.exception.ForbiddenException;
+import com.payments.ledger.domain.exception.PaymentTransactionNotFoundException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,17 @@ public class GlobalExceptionHandler {
                 "NOT_FOUND",
                 "Resource not found",
                 Map.of("resource", "account", "id", ex.getAccountId().toString())));
+  }
+
+  @ExceptionHandler(PaymentTransactionNotFoundException.class)
+  public ResponseEntity<ErrorResponse> paymentTransactionNotFound(
+      PaymentTransactionNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(
+            ErrorResponse.of(
+                "NOT_FOUND",
+                "Resource not found",
+                Map.of("resource", "transaction", "endToEndId", ex.getEndToEndId())));
   }
 
   @ExceptionHandler(ForbiddenException.class)
