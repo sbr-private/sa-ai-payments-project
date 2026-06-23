@@ -1,0 +1,60 @@
+<%- include('../partials/head', { title }) %>
+<%- include('../partials/header', { user }) %>
+
+<h1>New payment (pain.001)</h1>
+<p class="muted">From <%= account.owner.nm %> — available <%= account.bal.value %> <%= account.bal.ccy %></p>
+
+<% if (error) { %>
+<div class="alert error"><%= error %></div>
+<% } %>
+
+<div class="grid-2">
+  <section class="card">
+    <form class="stack" method="post" action="/payer/payment/new">
+      <label>
+        EndToEndId (idempotency key)
+        <input name="endToEndId" maxlength="35" required value="<%= defaults.endToEndId %>" class="mono" />
+      </label>
+      <label>
+        Amount
+        <input name="amount" required pattern="^[0-9]+(\.[0-9]+)?$" value="<%= defaults.amount %>" />
+      </label>
+      <label>
+        Creditor account ID
+        <input name="creditorAccountId" required value="<%= supplierAccountId %>" class="mono" />
+      </label>
+      <label>
+        Remittance (optional)
+        <input name="remittance" value="<%= defaults.remittance %>" />
+      </label>
+      <button class="btn" type="submit">Submit pain.001</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Status report (pain.002)</h2>
+    <% if (!result) { %>
+    <p class="muted">Submit a payment to see the pain.002 response here.</p>
+    <% } else { %>
+    <% const tx = result.orgnlPmtInfAndSts?.[0]?.txInfAndSts?.[0]; %>
+    <p>Group status: <strong><%= result.orgnlGrpInfAndSts.grpSts %></strong></p>
+    <% if (tx) { %>
+    <p>EndToEndId: <span class="mono"><%= tx.orgnlEndToEndId %></span></p>
+    <p>
+      txSts:
+      <span class="badge <%= tx.txSts === 'ACSC' ? 'ok' : 'err' %>"><%= tx.txSts %></span>
+    </p>
+    <% if (tx.stsRsnInf?.length) { %>
+    <p>Reason: <span class="mono"><%= tx.stsRsnInf[0].rsn.cd %></span></p>
+    <p class="muted"><%= tx.stsRsnInf[0].addtlInf?.join(' ') %></p>
+    <% } %>
+    <% } %>
+    <details style="margin-top:1rem">
+      <summary>Raw JSON</summary>
+      <pre class="mono"><%= JSON.stringify(result, null, 2) %></pre>
+    </details>
+    <% } %>
+  </section>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,200 @@
+openapi: 3.1.0
+info:
+  title: Payments Frontend UI API
+  version: 0.1.0
+  description: |
+    Browser-facing routes served by the Node.js/Express frontend.
+    Authenticated ledger operations are proxied to the Spring Boot API at `/api/*`
+    with `X-Demo-User` injected from the session.
+
+    Ledger contract: [docs/openapi.yaml](../../../docs/openapi.yaml)
+
+tags:
+  - name: Pages
+  - name: Session
+  - name: Proxy
+
+paths:
+  /:
+    get:
+      tags: [Pages]
+      operationId: home
+      summary: Redirect to login or role portal
+      security: []
+      responses:
+        "302":
+          description: Redirect to /login, /payer, or /support
+
+  /login:
+    get:
+      tags: [Session]
+      operationId: showLogin
+      summary: Login page
+      security: []
+      responses:
+        "200":
+          description: HTML login form
+    post:
+      tags: [Session]
+      operationId: submitLogin
+      summary: Authenticate against ledger POST /auth/login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: payer@demo
+                password:
+                  type: string
+                  example: demo
+      responses:
+        "302":
+          description: Redirect to payer or support portal on success
+        "401":
+          description: Invalid credentials — re-renders login page
+
+  /logout:
+    post:
+      tags: [Session]
+      operationId: logout
+      summary: Destroy session and return to login
+      responses:
+        "302":
+          description: Redirect to /login
+
+  /payer:
+    get:
+      tags: [Pages]
+      operationId: payerDashboard
+      summary: Payer dashboard — balance and recent statement
+      responses:
+        "200":
+          description: HTML dashboard
+        "302":
+          description: Redirect to login when unauthenticated
+        "403":
+          description: Wrong role for payer portal
+
+  /payer/payment/new:
+    get:
+      tags: [Pages]
+      operationId: newPaymentForm
+      summary: pain.001 payment initiation form
+      responses:
+        "200":
+          description: HTML form
+    post:
+      tags: [Pages]
+      operationId: submitPayment
+      summary: Build pain.001 JSON and POST to ledger /payment-initiations
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [endToEndId, amount, creditorAccountId]
+              properties:
+                endToEndId:
+                  type: string
+                  maxLength: 35
+                amount:
+                  type: string
+                  pattern: '^[0-9]+(\.[0-9]+)?$'
+                creditorAccountId:
+                  type: string
+                  format: uuid
+                remittance:
+                  type: string
+      responses:
+        "200":
+          description: HTML result with pain.002 status report
+
+  /support:
+    get:
+      tags: [Pages]
+      operationId: supportHome
+      summary: Control centre — EndToEndId search
+      responses:
+        "200":
+          description: HTML search page
+
+  /support/search:
+    get:
+      tags: [Pages]
+      operationId: supportSearch
+      summary: Look up transaction by EndToEndId (pain.002)
+      parameters:
+        - name: endToEndId
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 35
+      responses:
+        "200":
+          description: HTML result with txSts and stsRsnInf
+
+  /support/accounts/{id}:
+    get:
+      tags: [Pages]
+      operationId: supportAccount
+      summary: Account drill-down with camt.053 statement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: HTML account and statement view
+
+  /api/{path}:
+    get:
+      tags: [Proxy]
+      operationId: proxyGet
+      summary: Proxy GET to ledger API (session injects X-Demo-User)
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Upstream ledger response
+        "502":
+          description: Ledger API unreachable
+    post:
+      tags: [Proxy]
+      operationId: proxyPost
+      summary: Proxy POST to ledger API
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Upstream ledger response
+
+components:
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Express session cookie set after successful login
+
+security:
+  - SessionCookie: []

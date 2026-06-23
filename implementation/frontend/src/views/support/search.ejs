@@ -1,0 +1,59 @@
+<%- include('../partials/head', { title }) %>
+<%- include('../partials/header', { user }) %>
+
+<h1>Control Centre</h1>
+<p class="muted">Search payments by <code>endToEndId</code> (pain.002)</p>
+
+<section class="card">
+  <form class="stack" method="get" action="/support/search">
+    <label>
+      EndToEndId
+      <input name="endToEndId" maxlength="35" required value="<%= endToEndId %>" class="mono" placeholder="E2E-INV-2024-0999" />
+    </label>
+    <button class="btn" type="submit">Look up</button>
+  </form>
+
+  <p class="muted">Try:
+    <% hints.forEach(function(hint, index) { %>
+    <a href="/support/search?endToEndId=<%= encodeURIComponent(hint.id) %>"><%= hint.label %></a><%= index < hints.length - 1 ? ' ·' : '' %>
+    <% }) %>
+  </p>
+</section>
+
+<% if (error) { %>
+<div class="alert error"><%= error %></div>
+<% } %>
+
+<% if (result) { %>
+<section class="card">
+  <h2>Transaction status</h2>
+  <p>EndToEndId: <span class="mono"><%= result.orgnlEndToEndId %></span></p>
+  <p>
+    txSts:
+    <span class="badge <%= result.txSts === 'ACSC' ? 'ok' : result.txSts === 'RJCT' ? 'err' : 'warn' %>">
+      <%= result.txSts %>
+    </span>
+  </p>
+
+  <% if (result.stsRsnInf?.length) { %>
+  <h3>Status reason (stsRsnInf)</h3>
+  <% result.stsRsnInf.forEach(function(reason) { %>
+  <p>Code: <span class="mono"><%= reason.rsn.cd %></span></p>
+  <% if (reason.addtlInf?.length) { %>
+  <p class="muted"><%= reason.addtlInf.join(' ') %></p>
+  <% } %>
+  <% }) %>
+  <% } %>
+
+  <p style="margin-top:1rem">
+    <a href="/support/accounts/a1b2c3d4-e5f6-7890-abcd-ef1234567890">Drill into Acme account</a>
+  </p>
+
+  <details style="margin-top:1rem">
+    <summary>Raw JSON</summary>
+    <pre class="mono"><%= JSON.stringify(result, null, 2) %></pre>
+  </details>
+</section>
+<% } %>
+
+<%- include('../partials/footer') %>

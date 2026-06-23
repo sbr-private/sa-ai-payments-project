@@ -65,6 +65,8 @@ paths:
       tags: [Accounts]
       operationId: registerAccount
       summary: Register a cash account (seed / dev)
+      security:
+        - DemoUser: []
       requestBody:
         required: true
         content:
@@ -86,6 +88,8 @@ paths:
       tags: [Accounts]
       operationId: getAccount
       summary: Get account and balance
+      security:
+        - DemoUser: []
       parameters:
         - $ref: "#/components/parameters/AccountId"
       responses:
@@ -103,6 +107,8 @@ paths:
       tags: [Statements]
       operationId: getAccountStatement
       summary: Get account statement entries (camt.053)
+      security:
+        - DemoUser: []
       parameters:
         - $ref: "#/components/parameters/AccountId"
         - $ref: "#/components/parameters/Limit"
@@ -122,6 +128,8 @@ paths:
       tags: [PaymentInitiations]
       operationId: createPaymentInitiation
       summary: Submit credit transfer initiation (pain.001)
+      security:
+        - DemoUser: []
       description: |
         Accepts a pain.001 Customer Credit Transfer Initiation (JSON binding).
         Returns a pain.002 Customer Payment Status Report.
@@ -159,6 +167,8 @@ paths:
       tags: [PaymentInitiations]
       operationId: getTransactionStatus
       summary: Get transaction status by EndToEndId (pain.002)
+      security:
+        - DemoUser: []
       parameters:
         - name: endToEndId
           in: path
@@ -178,6 +188,15 @@ paths:
           $ref: "#/components/responses/NotFound"
 
 components:
+  securitySchemes:
+    DemoUser:
+      type: apiKey
+      in: header
+      name: X-Demo-User
+      description: |
+        Demo user email from POST /auth/login. Required on all routes except /health and /auth/login.
+        See docs/AUTH.md.
+
   parameters:
     AccountId:
       name: id

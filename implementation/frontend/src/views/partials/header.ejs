@@ -1,0 +1,24 @@
+<header class="site-header">
+  <div class="container">
+    <div class="brand">
+      Payments Ledger
+      <small>ISO 20022 demo</small>
+    </div>
+    <% if (typeof user !== 'undefined' && user) { %>
+    <nav class="nav-links">
+      <% if (user.role === 'payer') { %>
+      <a href="/payer">Dashboard</a>
+      <a href="/payer/payment/new">New payment</a>
+      <% } %>
+      <% if (user.role === 'support') { %>
+      <a href="/support">Search</a>
+      <% } %>
+      <a href="/api-docs/ledger" target="_blank" rel="noreferrer">API docs</a>
+      <form action="/logout" method="post" style="display:inline">
+        <button class="btn secondary" type="submit">Sign out</button>
+      </form>
+    </nav>
+    <% } %>
+  </div>
+</header>
+<main class="container">
