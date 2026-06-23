@@ -21,6 +21,22 @@ Performance benchmarks are **secondary** to correctness. They do not gate v1 com
 
 ---
 
+## Test boundary
+
+All timed benchmarks run **against the HTTP API**, not directly against the database.
+
+```
+benchmark CLI ──HTTP──► Payments API ──► LedgerRepository ──► PostgreSQL / MongoDB
+```
+
+The harness issues the same REST requests that the payer UI, control centre, and correctness scenarios use ([openapi.yaml](../openapi.yaml)). Latency and TPS include serialization, service logic, connection pooling, and persistence. That is intentional: the project compares databases **in the context of a realistic application**, not as isolated driver micro-benchmarks.
+
+**Do not** use `psql`, `mongosh`, or repository unit tests as the primary performance harness. Direct database scripts bypass idempotency, double-entry settlement, and concurrency rules defined in [SPEC.md](../SPEC.md). They are not comparable across adapters and do not reflect demo or production call paths.
+
+Repository-level benchmarks are optional diagnostics (e.g. isolating slow queries). They are out of scope for v1 pass criteria and must not replace API-level suites.
+
+---
+
 ## Prerequisites
 
 1. **Correctness green** — SC-001 through SC-015 pass on the adapter under test ([scenarios/README.md](../scenarios/README.md)).
@@ -249,6 +265,7 @@ Use this structure when presenting results (demo or write-up):
 
 ## Out of scope (v1)
 
+- Direct database or repository driver benchmarks as the primary comparison method
 - Multi-region or replicated cluster benchmarks
 - Sustained 24-hour soak tests
 - Payment rejection paths as load (AM04, DU04 under load)
