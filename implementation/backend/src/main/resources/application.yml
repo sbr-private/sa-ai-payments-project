@@ -6,7 +6,16 @@ server:
 spring:
   application:
     name: payments-ledger
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/ledger}
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/ledger}
+    username: ${DATABASE_USER:ledger}
+    password: ${DATABASE_PASSWORD:ledger}
+    driver-class-name: org.postgresql.Driver
 
-# DATABASE=postgres | mongo — adapter selection (wired in a later step)
 ledger:
-  database: ${DATABASE:postgres}
+  database: ${DATABASE:mongo}
+  test-helpers:
+    enabled: ${ENABLE_TEST_HELPERS:false}

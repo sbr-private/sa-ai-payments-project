@@ -56,7 +56,41 @@ mvn spring-boot:run
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `DATABASE` | `postgres` | Adapter selection (`postgres` or `mongo`) — not wired yet |
+| `DATABASE` | `mongo` | Adapter selection (`mongo` or `postgres`) |
+| `MONGODB_URI` | — | MongoDB connection string (Atlas or local replica set) |
+| `DATABASE_URL` | — | PostgreSQL JDBC URL (when `DATABASE=postgres`) |
+| `ENABLE_TEST_HELPERS` | `false` | Test-only credit/close account endpoints |
+
+## Design
+
+### Layering
+
+```
+HTTP (controllers, ISO JSON DTOs)
+        → LedgerService (business rules, pain.002 mapping)
+        → LedgerRepository (port)
+        → MongoAdapter | PostgresAdapter
+```
+
+Controllers and `LedgerService` must not depend on JDBC or Mongo driver types. Adapters own transactions, locking, and schema mapping.
+
+### Mongo first, PostgreSQL fast follow
+
+Default adapter is **MongoDB**. The PostgreSQL adapter is a fast follow — but the `LedgerRepository` port is designed for both from day one. No Mongo-specific assumptions in domain code; settlement atomicity and locking live inside each adapter.
+
+### MongoDB transactions
+
+Settlement uses multi-document transactions (lock accounts, insert payment, book statement entries). That requires a **replica set** — a standalone `mongod` is not sufficient.
+
+We expect to run against **MongoDB Atlas**, which provides a replica set by default. If you use local MongoDB instead, configure a single-node replica set.
+
+### Testing
+
+Unit tests cover domain and service logic. No Testcontainers or adapter integration tests. Compliance is proven later via HTTP scenario tests (SC-001–SC-015) against a running app.
+
+### Test helpers
+
+Several acceptance scenarios fund balances and close accounts via test-only API endpoints (`ENABLE_TEST_HELPERS=true`). There is no public v1 API for those operations.
 
 ## Status
 
@@ -64,9 +98,9 @@ mvn spring-boot:run
 |------|---------|
 | Spring Boot scaffold | Demo auth |
 | `/v1/health`, `/v1/ready` | Account and payment endpoints |
-| | PostgreSQL adapter |
-| | MongoDB adapter |
-| | Scenario tests (SC-001–SC-015) |
+| `LedgerRepository` port + domain models | Mongo adapter operations |
+| Runtime adapter selection (`mongo` / `postgres`) | PostgreSQL adapter operations (fast follow) |
+| Mongo / Postgres `isHealthy()` stubs | Scenario tests (SC-001–SC-015) |
 
 ## Package layout (planned)
 
