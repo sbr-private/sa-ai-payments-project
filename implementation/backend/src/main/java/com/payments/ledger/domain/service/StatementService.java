@@ -39,9 +39,10 @@ public class StatementService {
             .findAccountById(accountId)
             .orElseThrow(() -> new AccountNotFoundException(accountId));
 
-    int effectiveLimit = limit;
+    cursor.ifPresent(StatementService::validateCursor);
+
     StatementPage page =
-        ledgerRepository.findStatementEntries(accountId, effectiveLimit, cursor);
+        ledgerRepository.findStatementEntries(accountId, limit, cursor);
 
     String stmtId =
         "STMT-"
@@ -105,5 +106,20 @@ public class StatementService {
                 List.of(
                     new AccountStatementResponse.TransactionDetailsDto(
                         new AccountStatementResponse.RefsDto(entry.getEndToEndId()))))));
+  }
+
+  static void validateCursor(String cursor) {
+    if (cursor.isBlank()) {
+      throw new IllegalArgumentException("Invalid pagination cursor");
+    }
+    String[] parts = cursor.split("\\|", 2);
+    if (parts.length != 2 || parts[1].isBlank()) {
+      throw new IllegalArgumentException("Invalid pagination cursor");
+    }
+    try {
+      Long.parseLong(parts[0]);
+    } catch (NumberFormatException ex) {
+      throw new IllegalArgumentException("Invalid pagination cursor");
+    }
   }
 }

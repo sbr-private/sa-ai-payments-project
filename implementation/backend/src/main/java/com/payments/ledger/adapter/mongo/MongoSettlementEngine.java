@@ -56,19 +56,9 @@ final class MongoSettlementEngine {
   TransferOutcome settleTransfer(TransferCommand command) {
     IdempotencyFingerprint fingerprint = IdempotencyFingerprint.from(command);
 
-    Optional<PaymentTransaction> existing = findByEndToEndId(command.getEndToEndId());
-    if (existing.isPresent()) {
-      Document existingDoc =
-          mongoTemplate.findOne(
-              new Query(Criteria.where("pmtId.endToEndId").is(command.getEndToEndId())),
-              Document.class,
-              MongoCollections.PAYMENT_TRANSACTIONS);
-      IdempotencyFingerprint stored =
-          MongoPaymentTransactionMapper.fingerprintFromDocument(existingDoc);
-      if (fingerprint.matches(stored)) {
-        return TransferOutcome.replay(existing.get());
-      }
-      return TransferOutcome.conflict(existing.get());
+    Optional<Document> existingDoc = findTransactionDocument(command.getEndToEndId());
+    if (existingDoc.isPresent()) {
+      return replayOrConflict(command, existingDoc.get());
     }
 
     if (command.getInstructedAmount().getValueMinor() <= 0) {
@@ -335,9 +325,9 @@ final class MongoSettlementEngine {
   }
 
   private TransferOutcome resolveDebitFailure(TransferCommand command) {
-    Optional<PaymentTransaction> existing = findByEndToEndId(command.getEndToEndId());
-    if (existing.isPresent()) {
-      return resolveIdempotencyRace(command);
+    Optional<Document> existingDoc = findTransactionDocument(command.getEndToEndId());
+    if (existingDoc.isPresent()) {
+      return replayOrConflict(command, existingDoc.get());
     }
     return rejectTransfer(
         command,
@@ -349,14 +339,11 @@ final class MongoSettlementEngine {
       TransferCommand command,
       IdempotencyFingerprint fingerprint,
       PaymentTransaction settlementTransaction) {
-    Document existingDoc =
-        mongoTemplate.findOne(
-            new Query(Criteria.where("pmtId.endToEndId").is(command.getEndToEndId())),
-            Document.class,
-            MongoCollections.PAYMENT_TRANSACTIONS);
-    if (existingDoc == null) {
+    Optional<Document> existingDocOpt = findTransactionDocument(command.getEndToEndId());
+    if (existingDocOpt.isEmpty()) {
       return false;
     }
+    Document existingDoc = existingDocOpt.get();
 
     PaymentTransaction existing = MongoPaymentTransactionMapper.toDomain(existingDoc);
     if (existing.getStatus() != TransactionStatus.RJCT) {
@@ -418,9 +405,9 @@ final class MongoSettlementEngine {
 
   private TransferOutcome rejectTransfer(
       TransferCommand command, List<StatusReason> reasons) {
-    Optional<PaymentTransaction> existing = findByEndToEndId(command.getEndToEndId());
-    if (existing.isPresent()) {
-      return resolveIdempotencyRace(command);
+    Optional<Document> existingDoc = findTransactionDocument(command.getEndToEndId());
+    if (existingDoc.isPresent()) {
+      return replayOrConflict(command, existingDoc.get());
     }
 
     Instant now = Instant.now();
@@ -447,28 +434,35 @@ final class MongoSettlementEngine {
     }
   }
 
+  private Optional<Document> findTransactionDocument(String endToEndId) {
+    Document document =
+        mongoTemplate.findOne(
+            new Query(Criteria.where("pmtId.endToEndId").is(endToEndId)),
+            Document.class,
+            MongoCollections.PAYMENT_TRANSACTIONS);
+    return Optional.ofNullable(document);
+  }
+
+  private TransferOutcome replayOrConflict(TransferCommand command, Document existingDoc) {
+    PaymentTransaction existing = MongoPaymentTransactionMapper.toDomain(existingDoc);
+    IdempotencyFingerprint stored =
+        MongoPaymentTransactionMapper.fingerprintFromDocument(existingDoc);
+    IdempotencyFingerprint requested = IdempotencyFingerprint.from(command);
+    if (requested.matches(stored)) {
+      return TransferOutcome.replay(existing);
+    }
+    return TransferOutcome.conflict(existing);
+  }
+
   private TransferOutcome resolveIdempotencyRace(TransferCommand command) {
-    PaymentTransaction existing =
-        findByEndToEndId(command.getEndToEndId())
+    Document existingDoc =
+        findTransactionDocument(command.getEndToEndId())
             .orElseThrow(
                 () ->
                     new IllegalStateException(
                         "Duplicate endToEndId insert without existing row: "
                             + command.getEndToEndId()));
-
-    Document existingDoc =
-        mongoTemplate.findOne(
-            new Query(Criteria.where("pmtId.endToEndId").is(command.getEndToEndId())),
-            Document.class,
-            MongoCollections.PAYMENT_TRANSACTIONS);
-    IdempotencyFingerprint stored =
-        MongoPaymentTransactionMapper.fingerprintFromDocument(existingDoc);
-    IdempotencyFingerprint requested = IdempotencyFingerprint.from(command);
-
-    if (requested.matches(stored)) {
-      return TransferOutcome.replay(existing);
-    }
-    return TransferOutcome.conflict(existing);
+    return replayOrConflict(command, existingDoc);
   }
 
   private void ensureSettlementAccount() {

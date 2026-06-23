@@ -185,11 +185,22 @@ Default adapter is **MongoDB**. The PostgreSQL adapter is a fast follow — but 
 
 ### MongoDB settlement (local dev)
 
-Settlement uses conditional `findAndModify` on account balances — a standalone local `mongod` is sufficient for the current demo flow. A replica set (or Atlas) will be required if we move to multi-document transactions in the adapter.
+Settlement uses conditional `findAndModify` on account balances — a standalone local `mongod` is sufficient for the current demo flow. Balance updates, payment transaction rows, and statement entries are written sequentially (not in a multi-document transaction). A replica set would be required for atomic multi-document writes if we tighten that guarantee later.
 
 ### Testing
 
-Unit tests cover domain and service logic. No Testcontainers or adapter integration tests. Compliance is proven later via HTTP scenario tests (SC-001–SC-015) against a running app.
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| Unit / controller tests | `src/test/java/.../api/`, `domain/` | DTO validation, auth, mocked repository |
+| Mongo integration tests | `src/test/java/.../adapter/mongo/` | Settlement, idempotency, pagination, concurrency |
+| HTTP scenario runner | `implementation/scenarios/` | SC-001–SC-015 against a running API |
+
+```bash
+mvn test                                    # unit + integration (requires MongoDB on :27017)
+cd ../scenarios && npm run test:scenarios   # full acceptance suite (API must be running)
+```
+
+No Testcontainers — integration tests expect a local `mongod`.
 
 ### Test helpers
 
@@ -200,7 +211,7 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 | Done | Pending |
 |------|---------|
 | Spring Boot scaffold | PostgreSQL adapter operations (fast follow) |
-| `/v1/health`, `/v1/ready` | PostgreSQL adapter operations (fast follow) |
+| `/v1/health`, `/v1/ready` | |
 | Demo auth (`POST /auth/login`, `X-Demo-User`) | |
 | `POST /accounts`, `GET /accounts/{id}` — Mongo | |
 | Test helpers — `POST /test/accounts/{id}/credit`, `/close` | |
@@ -213,14 +224,15 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 | Concurrent settlement — SC-010 | |
 | HTTP scenario runner — `implementation/scenarios/` (SC-001–SC-015) | |
 
-## Package layout (planned)
+## Package layout
 
 ```
 com.payments.ledger
-├── api/           REST controllers and DTOs
-├── domain/        Ledger service and business rules
-├── repository/    LedgerRepository port
+├── api/              REST controllers, DTOs, mappers, GlobalExceptionHandler
+├── config/           Spring config, SampleDataLoader, adapter wiring
+├── domain/           Services, auth, models, money, exceptions
+├── repository/       LedgerRepository port
 └── adapter/
-    ├── postgres/
-    └── mongo/
+    ├── mongo/        MongoLedgerRepository, MongoSettlementEngine, mappers
+    └── postgres/     PostgresLedgerRepository (stub — health check only)
 ```

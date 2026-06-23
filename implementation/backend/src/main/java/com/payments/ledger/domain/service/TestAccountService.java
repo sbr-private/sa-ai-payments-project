@@ -2,6 +2,7 @@ package com.payments.ledger.domain.service;
 
 import com.payments.ledger.api.dto.TestCreditRequest;
 import com.payments.ledger.domain.exception.AccountNotFoundException;
+import com.payments.ledger.domain.model.Account;
 import com.payments.ledger.domain.model.Money;
 import com.payments.ledger.domain.money.MoneyConverter;
 import com.payments.ledger.repository.LedgerRepository;
@@ -18,7 +19,11 @@ public class TestAccountService {
   }
 
   public void credit(UUID accountId, TestCreditRequest request) {
-    ensureAccountExists(accountId);
+    Account account = ensureAccountExists(accountId);
+    if (!account.getCcy().equals(request.getAmount().getCcy())) {
+      throw new IllegalArgumentException(
+          "Credit currency must match account currency (" + account.getCcy() + ")");
+    }
     Money amount =
         new Money(
             MoneyConverter.toMinorUnits(
@@ -32,8 +37,8 @@ public class TestAccountService {
     ledgerRepository.closeAccount(accountId);
   }
 
-  private void ensureAccountExists(UUID accountId) {
-    ledgerRepository
+  private Account ensureAccountExists(UUID accountId) {
+    return ledgerRepository
         .findAccountById(accountId)
         .orElseThrow(() -> new AccountNotFoundException(accountId));
   }
