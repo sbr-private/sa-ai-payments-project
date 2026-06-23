@@ -1,0 +1,12 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /v1
+
+spring:
+  application:
+    name: payments-ledger
+
+# DATABASE=postgres | mongo — adapter selection (wired in a later step)
+ledger:
+  database: ${DATABASE:postgres}
