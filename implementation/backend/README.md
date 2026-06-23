@@ -49,8 +49,11 @@ mvn spring-boot:run
 |----------|-----|
 | Liveness | `GET http://localhost:8080/v1/health` |
 | Readiness | `GET http://localhost:8080/v1/ready` |
+| Login | `POST http://localhost:8080/v1/auth/login` |
 
-`/ready` returns `503` until a database adapter is connected.
+`/health` and `/auth/login` are public. All other routes require `X-Demo-User: <email>` (e.g. `benchmark@demo`).
+
+`/ready` returns `503` when the database is unreachable.
 
 ## Configuration
 
@@ -96,11 +99,12 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 
 | Done | Pending |
 |------|---------|
-| Spring Boot scaffold | Demo auth |
-| `/v1/health`, `/v1/ready` | Account and payment endpoints |
-| `LedgerRepository` port + domain models | Mongo adapter operations |
-| Runtime adapter selection (`mongo` / `postgres`) | PostgreSQL adapter operations (fast follow) |
-| Mongo / Postgres `isHealthy()` stubs | Scenario tests (SC-001–SC-015) |
+| Spring Boot scaffold | Account and payment endpoints |
+| `/v1/health`, `/v1/ready` | Mongo adapter operations |
+| Demo auth (`POST /auth/login`, `X-Demo-User`) | PostgreSQL adapter operations (fast follow) |
+| `LedgerRepository` port + domain models | Scenario tests (SC-001–SC-015) |
+| Runtime adapter selection (`mongo` / `postgres`) | |
+| Mongo / Postgres `isHealthy()` stubs | |
 
 ## Package layout (planned)
 
