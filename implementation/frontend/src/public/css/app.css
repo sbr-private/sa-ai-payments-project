@@ -736,6 +736,26 @@ td a {
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   color: var(--text-secondary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.hint-chip:hover {
+  background: var(--lg-green-light3);
+  border-color: var(--lg-green-light2);
+  color: var(--text);
+}
+
+.hint-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 163, 92, 0.2);
+}
+
+.hint-chip.selected {
+  background: var(--lg-green-light3);
+  border-color: var(--lg-green-dark1);
+  color: var(--lg-green-dark2);
 }
 
 .hint-chip strong {
