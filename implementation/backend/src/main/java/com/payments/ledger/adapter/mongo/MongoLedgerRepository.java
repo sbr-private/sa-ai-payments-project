@@ -32,12 +32,18 @@ public class MongoLedgerRepository implements LedgerRepository {
 
   @Override
   public Optional<Account> findAccountById(UUID id) {
-    throw notImplemented();
+    Document document =
+        mongoTemplate.findById(id.toString(), Document.class, MongoCollections.ACCOUNTS);
+    if (document == null) {
+      return Optional.empty();
+    }
+    return Optional.of(MongoAccountMapper.toDomain(document));
   }
 
   @Override
   public Account insertAccount(Account account) {
-    throw notImplemented();
+    mongoTemplate.insert(MongoAccountMapper.toDocument(account), MongoCollections.ACCOUNTS);
+    return account;
   }
 
   @Override
