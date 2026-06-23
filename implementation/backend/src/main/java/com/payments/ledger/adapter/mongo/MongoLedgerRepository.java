@@ -15,9 +15,11 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 public class MongoLedgerRepository implements LedgerRepository {
 
   private final MongoTemplate mongoTemplate;
+  private final MongoSettlementEngine settlementEngine;
 
   public MongoLedgerRepository(MongoTemplate mongoTemplate) {
     this.mongoTemplate = mongoTemplate;
+    this.settlementEngine = new MongoSettlementEngine(mongoTemplate);
   }
 
   @Override
@@ -48,30 +50,26 @@ public class MongoLedgerRepository implements LedgerRepository {
 
   @Override
   public Optional<PaymentTransaction> findByEndToEndId(String endToEndId) {
-    throw notImplemented();
+    return settlementEngine.findByEndToEndId(endToEndId);
   }
 
   @Override
   public StatementPage findStatementEntries(UUID accountId, int limit, Optional<String> cursor) {
-    throw notImplemented();
+    return settlementEngine.findStatementEntries(accountId, limit, cursor);
   }
 
   @Override
   public TransferOutcome settleTransfer(TransferCommand command) {
-    throw notImplemented();
+    return settlementEngine.settleTransfer(command);
   }
 
   @Override
   public void creditAccount(UUID accountId, Money amount, String endToEndId) {
-    throw notImplemented();
+    settlementEngine.creditAccount(accountId, amount, endToEndId);
   }
 
   @Override
   public void closeAccount(UUID accountId) {
-    throw notImplemented();
-  }
-
-  private static UnsupportedOperationException notImplemented() {
-    return new UnsupportedOperationException("Mongo adapter operation not implemented yet");
+    settlementEngine.closeAccount(accountId);
   }
 }

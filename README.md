@@ -10,12 +10,15 @@ Primary intent: [docs/PURPOSE.md](docs/PURPOSE.md)
 
 ## Repository status
 
-| Present | Not present |
+| Present | In progress |
 |---------|-------------|
-| Behavioural specification ([SPEC.md](docs/SPEC.md)) | Application source code |
-| OpenAPI contract ([openapi.yaml](docs/openapi.yaml)) | Runnable API, UI, or benchmark harness |
+| Behavioural specification ([SPEC.md](docs/SPEC.md)) | Full scenario coverage (SC-001–SC-015) |
+| OpenAPI contract ([openapi.yaml](docs/openapi.yaml)) | PostgreSQL adapter |
 | 15 acceptance scenarios ([docs/scenarios/](docs/scenarios/)) | Automated scenario runner |
 | Reference schemas and seed data for PostgreSQL and MongoDB | Production deployment |
+| **Backend implementation** ([implementation/backend/](implementation/backend/)) — Mongo adapter, demo auth, accounts, payments, statements | Frontend UI |
+
+The backend is a work-in-progress Spring Boot API. See [implementation/backend/README.md](implementation/backend/README.md) for build/run instructions and current feature status.
 
 Reference DDL, validators, and seed scripts under `docs/adapters/` may be applied directly to a local database during development. They are illustrative starting points, not a substitute for adapter implementation.
 

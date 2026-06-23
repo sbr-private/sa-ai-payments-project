@@ -51,6 +51,12 @@ mvn clean install
 
 Start MongoDB, then the API. The default connection is `mongodb://localhost:27017/ledger` — no `MONGODB_URI` required for local dev.
 
+For test helpers (credit/close accounts) and the full SC-002 smoke flow:
+
+```bash
+ENABLE_TEST_HELPERS=true mvn spring-boot:run
+```
+
 ```bash
 # if using Homebrew MongoDB
 brew services start mongodb-community@7.0
@@ -64,6 +70,12 @@ mvn spring-boot:run
 | Liveness | `GET http://localhost:8080/v1/health` |
 | Readiness | `GET http://localhost:8080/v1/ready` |
 | Login | `POST http://localhost:8080/v1/auth/login` |
+| Register account | `POST http://localhost:8080/v1/accounts` |
+| Get account | `GET http://localhost:8080/v1/accounts/{id}` |
+| Credit account (test) | `POST http://localhost:8080/v1/test/accounts/{id}/credit` |
+| Close account (test) | `POST http://localhost:8080/v1/test/accounts/{id}/close` |
+| Initiate payment | `POST http://localhost:8080/v1/payment-initiations` |
+| Account statement | `GET http://localhost:8080/v1/accounts/{id}/statements` |
 
 `/health` and `/auth/login` are public. All other routes require `X-Demo-User: <email>` (e.g. `benchmark@demo`).
 
@@ -71,11 +83,12 @@ mvn spring-boot:run
 
 ## Demo flow
 
-Smoke test for health, demo auth, readiness, and account registration (SC-001):
+Smoke test for health, demo auth, readiness, account registration (SC-001), test-helper funding, payment initiation (SC-002), and statements:
 
 ```bash
 cd implementation/backend
 chmod +x scripts/smoke-auth-and-register-account.sh   # once
+ENABLE_TEST_HELPERS=true mvn spring-boot:run          # in another terminal
 ./scripts/smoke-auth-and-register-account.sh
 ```
 
@@ -86,8 +99,14 @@ The script walks through:
 3. `GET /ready` — database check (`X-Demo-User: benchmark@demo`)
 4. `POST /accounts` — register a USD account (SC-001)
 5. `POST /auth/login` — support login
+6. `GET /accounts/{id}` — fetch registered account
+7. `POST /test/accounts/{id}/credit` — fund $1,000 (test helper)
+8. `POST /accounts` — register creditor account
+9. `POST /payment-initiations` — $50 transfer (SC-002, pain.001 → pain.002)
+10. `GET /accounts/{id}` — verify balances (950 / 50)
+11. `GET /accounts/{id}/statements` — camt.053 entries (DBIT / CRDT)
 
-Override the base URL or demo user if needed:
+Start the server with `ENABLE_TEST_HELPERS=true` for steps 7–11. Override the base URL or demo user if needed:
 
 ```bash
 BASE_URL=http://localhost:8080/v1 DEMO_USER=benchmark@demo ./scripts/smoke-auth-and-register-account.sh
@@ -130,22 +149,20 @@ Demo users (password `demo`): `payer@demo`, `support@demo`, `benchmark@demo`.
 
 ```
 HTTP (controllers, ISO JSON DTOs)
-        → LedgerService (business rules, pain.002 mapping)
+        → domain services (AccountService, PaymentService, …)
         → LedgerRepository (port)
         → MongoAdapter | PostgresAdapter
 ```
 
-Controllers and `LedgerService` must not depend on JDBC or Mongo driver types. Adapters own transactions, locking, and schema mapping.
+Controllers and domain services must not depend on JDBC or Mongo driver types. Adapters own transactions, locking, and schema mapping.
 
 ### Mongo first, PostgreSQL fast follow
 
 Default adapter is **MongoDB**. The PostgreSQL adapter is a fast follow — but the `LedgerRepository` port is designed for both from day one. No Mongo-specific assumptions in domain code; settlement atomicity and locking live inside each adapter.
 
-### MongoDB transactions
+### MongoDB settlement (local dev)
 
-Settlement (coming later) uses multi-document transactions. That requires a **replica set** — a standalone local `mongod` is fine for account registration and the current demo flow.
-
-When payment initiation is implemented, either configure a [single-node replica set](https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/) locally or use Atlas.
+Settlement uses conditional `findAndModify` on account balances — a standalone local `mongod` is sufficient for the current demo flow. A replica set (or Atlas) will be required if we move to multi-document transactions in the adapter.
 
 ### Testing
 
@@ -159,10 +176,13 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 
 | Done | Pending |
 |------|---------|
-| Spring Boot scaffold | Payment initiation |
-| `/v1/health`, `/v1/ready` | PostgreSQL adapter operations (fast follow) |
-| Demo auth (`POST /auth/login`, `X-Demo-User`) | Scenario tests (SC-001–SC-015) |
-| `POST /accounts`, `GET /accounts/{id}` — Mongo | |
+| Spring Boot scaffold | `GET /payment-initiations/transactions/{endToEndId}` |
+| `/v1/health`, `/v1/ready` | Rejection paths (AM04, AC04, AG01, …) |
+| Demo auth (`POST /auth/login`, `X-Demo-User`) | Idempotency replay / conflict (SC-004, SC-005) |
+| `POST /accounts`, `GET /accounts/{id}` — Mongo | Statement pagination (SC-011) |
+| Test helpers — `POST /test/accounts/{id}/credit`, `/close` | PostgreSQL adapter operations (fast follow) |
+| `POST /payment-initiations` — Mongo (SC-002 happy path) | Scenario tests (SC-001–SC-015) |
+| `GET /accounts/{id}/statements` — Mongo (basic list) | Concurrency hardening (SC-010) |
 
 ## Package layout (planned)
 
