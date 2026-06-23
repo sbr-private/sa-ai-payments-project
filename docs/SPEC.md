@@ -588,33 +588,15 @@ Adapters MAY store minor-unit integers internally. Conversion rules in [iso20022
 
 ## 11. Comparison Harness
 
-### Who sends the load?
+Performance benchmarks compare PostgreSQL and MongoDB adapters under controlled load. Full specification: **[benchmarks/PERFORMANCE.md](./benchmarks/PERFORMANCE.md)**.
 
-A dedicated **`apps/benchmarks/` CLI** — not the payer UI, control centre, or demo users. It drives the API directly with concurrent HTTP clients (e.g. k6 or a small custom runner).
+Summary:
 
-```
-benchmarks run --adapter=postgres --suite=write-heavy
-```
-
-The harness authenticates as `benchmark@demo` via `X-Demo-User` header on every request. No login round-trip in the hot path.
-
-### Suites
-
-| Suite | Mix | Purpose |
-|-------|-----|---------|
-| **Correctness** | — | Runs SC-001–SC-015 (uses `benchmark@demo` or direct header; not measured) |
-| **Write-heavy** | 100% `POST /payment-initiations` | Transfer TPS |
-| **Read-heavy** | 80% GET balance/statement, 20% writes | Support-style read patterns |
-| **Mixed** | 50/50 read/write | Realistic combined load |
-| **Seed profile** | Bulk setup | 10K accounts, 1M transfers before timed run |
-
-### Metrics (per adapter)
-
-p50/p95/p99 latency per endpoint, TPS, error rate, conflict/retry rate, storage size after seed.
-
-Results written to `benchmarks/results/<adapter>/<date>.json`.
-
-Pass criteria: correctness scenarios green; perf numbers recorded (not gated).
+- **Harness:** `implementation/benchmarks/` CLI (not the UI); authenticates as `benchmark@demo` via `X-Demo-User` on every request; no login in the hot path.
+- **Suites:** `correctness` (SC-001–SC-015, not timed), `write-heavy`, `read-heavy`, `mixed`, `seed-profile` (10K accounts, 1M transfers).
+- **Metrics:** p50/p95/p99 latency per endpoint, TPS, error rate, reject rate, storage after seed.
+- **Results:** `implementation/benchmarks/results/<adapter>/<suite>-<timestamp>.json`
+- **Pass criteria:** correctness scenarios green; perf numbers recorded per adapter (not gated for v1 compliance).
 
 ---
 

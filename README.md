@@ -218,6 +218,7 @@ Scenarios authenticate with `X-Demo-User: benchmark@demo` or equivalent test set
 | [docs/iso20022/MAPPING.md](docs/iso20022/MAPPING.md) | ISO XML to JSON, minor-unit conversion |
 | [docs/openapi.yaml](docs/openapi.yaml) | API contract |
 | [docs/scenarios/](docs/scenarios/) | Acceptance scenarios |
+| [docs/benchmarks/PERFORMANCE.md](docs/benchmarks/PERFORMANCE.md) | Performance benchmark specification |
 | [docs/fixtures/](docs/fixtures/) | Golden JSON examples |
 | [docs/adapters/](docs/adapters/) | PostgreSQL and MongoDB reference schemas |
 
