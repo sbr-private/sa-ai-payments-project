@@ -3,6 +3,8 @@ package com.payments.ledger.api;
 import com.payments.ledger.api.dto.ErrorResponse;
 import com.payments.ledger.api.error.InvalidCredentialsException;
 import com.payments.ledger.domain.auth.UnauthorizedException;
+import com.payments.ledger.domain.exception.AccountNotFoundException;
+import com.payments.ledger.domain.exception.ForbiddenException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,5 +38,21 @@ public class GlobalExceptionHandler {
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(ErrorResponse.of("VALIDATION_ERROR", "Request validation failed", details));
+  }
+
+  @ExceptionHandler(AccountNotFoundException.class)
+  public ResponseEntity<ErrorResponse> accountNotFound(AccountNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(
+            ErrorResponse.of(
+                "NOT_FOUND",
+                "Resource not found",
+                Map.of("resource", "account", "id", ex.getAccountId().toString())));
+  }
+
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity<ErrorResponse> forbidden(ForbiddenException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ErrorResponse.of("FORBIDDEN", ex.getMessage()));
   }
 }

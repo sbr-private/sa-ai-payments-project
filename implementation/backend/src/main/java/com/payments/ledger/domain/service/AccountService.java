@@ -1,5 +1,8 @@
 package com.payments.ledger.domain.service;
 
+import com.payments.ledger.domain.exception.AccountNotFoundException;
+import com.payments.ledger.domain.auth.AccountAccess;
+import com.payments.ledger.domain.auth.DemoUser;
 import com.payments.ledger.domain.model.Account;
 import com.payments.ledger.domain.model.AccountStatus;
 import com.payments.ledger.domain.model.Party;
@@ -29,5 +32,13 @@ public class AccountService {
             Instant.now());
 
     return ledgerRepository.insertAccount(account);
+  }
+
+  public Account getAccount(UUID accountId, DemoUser requester) {
+    AccountAccess.requireCanView(requester, accountId);
+
+    return ledgerRepository
+        .findAccountById(accountId)
+        .orElseThrow(() -> new AccountNotFoundException(accountId));
   }
 }

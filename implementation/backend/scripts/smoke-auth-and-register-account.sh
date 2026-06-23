@@ -70,7 +70,8 @@ section "Done"
 if command -v jq >/dev/null 2>&1; then
   account_id=$(echo "$ACCOUNT_JSON" | jq -r '.id')
   echo "Registered account id: $account_id"
-  echo "GET /accounts/{id} is not implemented yet — save this id for later steps."
+  section "6. Get account — SC-013 happy path"
+  curl -sS -f -H "X-Demo-User: $DEMO_USER" "$BASE_URL/accounts/$account_id" | pretty
 else
-  echo "Install jq to extract the account id from step 4."
+  echo "Install jq to run the GET /accounts/{id} step automatically."
 fi

@@ -1,12 +1,17 @@
 package com.payments.ledger.api;
 
+import com.payments.ledger.api.auth.AuthContext;
 import com.payments.ledger.api.dto.AccountResponse;
 import com.payments.ledger.api.dto.RegisterAccountRequest;
 import com.payments.ledger.api.mapper.AccountApiMapper;
 import com.payments.ledger.api.mapper.RegisterAccountMapper;
 import com.payments.ledger.domain.service.AccountService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -28,5 +33,11 @@ public class AccountController {
   public AccountResponse registerAccount(@Valid @RequestBody RegisterAccountRequest request) {
     return accountApiMapper.toResponse(
         accountService.registerAccount(RegisterAccountMapper.toParty(request), request.getCcy()));
+  }
+
+  @GetMapping("/accounts/{id}")
+  public AccountResponse getAccount(@PathVariable UUID id, HttpServletRequest request) {
+    return accountApiMapper.toResponse(
+        accountService.getAccount(id, AuthContext.requireUser(request)));
   }
 }

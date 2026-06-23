@@ -159,12 +159,10 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 
 | Done | Pending |
 |------|---------|
-| Spring Boot scaffold | Get account (SC-013) |
-| `/v1/health`, `/v1/ready` | Payment initiation |
-| Demo auth (`POST /auth/login`, `X-Demo-User`) | PostgreSQL adapter operations (fast follow) |
-| `LedgerRepository` port + domain models | Scenario tests (SC-001–SC-015) |
-| Runtime adapter selection (`mongo` / `postgres`) | |
-| `POST /accounts` — Mongo adapter (SC-001) | |
+| Spring Boot scaffold | Payment initiation |
+| `/v1/health`, `/v1/ready` | PostgreSQL adapter operations (fast follow) |
+| Demo auth (`POST /auth/login`, `X-Demo-User`) | Scenario tests (SC-001–SC-015) |
+| `POST /accounts`, `GET /accounts/{id}` — Mongo | |
 
 ## Package layout (planned)
 
