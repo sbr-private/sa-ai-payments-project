@@ -9,6 +9,7 @@ public class LedgerProperties {
   private String database = "mongo";
 
   private final TestHelpers testHelpers = new TestHelpers();
+  private final SampleData sampleData = new SampleData();
 
   public String getDatabase() {
     return database;
@@ -22,7 +23,24 @@ public class LedgerProperties {
     return testHelpers;
   }
 
+  public SampleData getSampleData() {
+    return sampleData;
+  }
+
   public static class TestHelpers {
+
+    private boolean enabled = false;
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+    }
+  }
+
+  public static class SampleData {
 
     private boolean enabled = false;
 

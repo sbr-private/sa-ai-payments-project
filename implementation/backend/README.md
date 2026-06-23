@@ -57,6 +57,14 @@ For test helpers (credit/close accounts) and the full SC-002 smoke flow:
 ENABLE_TEST_HELPERS=true mvn spring-boot:run
 ```
 
+For the payer/support demo dataset (Acme $950, Supplier $50, failed payment `E2E-INV-2024-0999`):
+
+```bash
+LOAD_SAMPLE_DATA=true mvn spring-boot:run
+```
+
+`LOAD_SAMPLE_DATA` is idempotent — skipped when the Acme account already exists.
+
 ```bash
 # if using Homebrew MongoDB
 brew services start mongodb-community@7.0
@@ -142,6 +150,7 @@ Demo users (password `demo`): `payer@demo`, `support@demo`, `benchmark@demo`.
 | `MONGODB_URI` | `mongodb://localhost:27017/ledger` | MongoDB connection string |
 | `DATABASE_URL` | — | PostgreSQL JDBC URL (when `DATABASE=postgres`) |
 | `ENABLE_TEST_HELPERS` | `false` | Test-only credit/close account endpoints |
+| `LOAD_SAMPLE_DATA` | `false` | Load minimal demo seed on startup (see [SEED.md](../../docs/SEED.md)) |
 
 ## Design
 
@@ -183,6 +192,7 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 | Test helpers — `POST /test/accounts/{id}/credit`, `/close` | PostgreSQL adapter operations (fast follow) |
 | `POST /payment-initiations` — Mongo (SC-002 happy path) | Scenario tests (SC-001–SC-015) |
 | `GET /accounts/{id}/statements` — Mongo (basic list) | Concurrency hardening (SC-010) |
+| Sample data loader (`LOAD_SAMPLE_DATA=true`) | |
 
 ## Package layout (planned)
 

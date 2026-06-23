@@ -19,3 +19,5 @@ ledger:
   database: ${DATABASE:mongo}
   test-helpers:
     enabled: ${ENABLE_TEST_HELPERS:false}
+  sample-data:
+    enabled: ${LOAD_SAMPLE_DATA:false}
