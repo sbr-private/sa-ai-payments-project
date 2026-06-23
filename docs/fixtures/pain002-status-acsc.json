@@ -1,0 +1,22 @@
+{
+  "grpHdr": {
+    "msgId": "STS-20260623-0001",
+    "creDtTm": "2026-06-23T12:00:01Z"
+  },
+  "orgnlGrpInfAndSts": {
+    "orgnlMsgId": "MSG-20260623-0001",
+    "orgnlMsgNmId": "pain.001.001.09",
+    "grpSts": "ACSC"
+  },
+  "orgnlPmtInfAndSts": [
+    {
+      "orgnlPmtInfId": "PMT-20260623-0001",
+      "txInfAndSts": [
+        {
+          "orgnlEndToEndId": "E2E-INV-2024-0558",
+          "txSts": "ACSC"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://payments-project.local/mongodb/_defs.json",
+  "title": "Payments Ledger — MongoDB shared document types",
+  "description": "Reusable definitions referenced by collection validators. MongoDB $jsonSchema does not resolve external $ref; these are the canonical shape reference for implementers.",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 string (API entity IDs)"
+    },
+    "iso4217": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217 currency code"
+    },
+    "isoDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "ISO 8601 calendar date (camt.053 BookgDt)"
+    },
+    "endToEndId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 35,
+      "description": "ISO Max35Text — idempotency key (PmtId.EndToEndId)"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Document schema version for online migrations"
+    },
+    "minorAmount": {
+      "type": "object",
+      "required": ["valueMinor", "ccy"],
+      "additionalProperties": false,
+      "properties": {
+        "valueMinor": {
+          "type": "integer",
+          "description": "Amount in ISO 4217 minor units (e.g. cents for USD)"
+        },
+        "ccy": { "$ref": "#/$defs/iso4217" }
+      }
+    },
+    "positiveMinorAmount": {
+      "allOf": [
+        { "$ref": "#/$defs/minorAmount" },
+        {
+          "properties": {
+            "valueMinor": { "type": "integer", "minimum": 1 }
+          }
+        }
+      ]
+    },
+    "balanceAfterEntry": {
+      "type": "object",
+      "required": ["valueMinor", "ccy", "cdtDbtInd"],
+      "additionalProperties": false,
+      "properties": {
+        "valueMinor": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Booked balance magnitude after entry"
+        },
+        "ccy": { "$ref": "#/$defs/iso4217" },
+        "cdtDbtInd": { "$ref": "#/$defs/cdtDbtInd" }
+      }
+    },
+    "party": {
+      "type": "object",
+      "required": ["nm"],
+      "additionalProperties": false,
+      "properties": {
+        "nm": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "Party name (ISO PartyIdentification135.Nm)"
+        },
+        "id": {
+          "type": "object",
+          "required": ["othr"],
+          "additionalProperties": false,
+          "properties": {
+            "othr": {
+              "type": "object",
+              "required": ["id"],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 35
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "paymentIdentification": {
+      "type": "object",
+      "required": ["endToEndId"],
+      "additionalProperties": false,
+      "properties": {
+        "endToEndId": { "$ref": "#/$defs/endToEndId" },
+        "instrId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 35,
+          "description": "Optional instruction ID (ISO Max35Text)"
+        }
+      }
+    },
+    "idempotencyBody": {
+      "type": "object",
+      "required": ["dbtrAcctId", "cdtrAcctId", "instdAmt"],
+      "additionalProperties": false,
+      "properties": {
+        "dbtrAcctId": { "$ref": "#/$defs/uuid" },
+        "cdtrAcctId": { "$ref": "#/$defs/uuid" },
+        "instdAmt": { "$ref": "#/$defs/positiveMinorAmount" }
+      },
+      "description": "Normalized CdtTrfTxInf fingerprint for replay / DU04 detection (SPEC §7.2)"
+    },
+    "statusReasonInfo": {
+      "type": "object",
+      "required": ["rsn"],
+      "additionalProperties": false,
+      "properties": {
+        "rsn": {
+          "type": "object",
+          "required": ["cd"],
+          "additionalProperties": false,
+          "properties": {
+            "cd": {
+              "type": "string",
+              "enum": ["AM04", "AC04", "AM12", "CURR", "DU04", "AG01", "BE01"]
+            }
+          }
+        },
+        "addtlInf": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "remittanceInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ustrd": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "accountStatus": {
+      "type": "string",
+      "enum": ["active", "closed"]
+    },
+    "txSts": {
+      "type": "string",
+      "enum": ["PDNG", "ACSC", "RJCT"]
+    },
+    "cdtDbtInd": {
+      "type": "string",
+      "enum": ["DBIT", "CRDT"]
+    },
+    "entryStatus": {
+      "type": "string",
+      "enum": ["BOOK"]
+    }
+  }
+}

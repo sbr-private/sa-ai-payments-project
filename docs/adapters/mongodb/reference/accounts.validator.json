@@ -1,0 +1,80 @@
+{
+  "collection": "accounts",
+  "validationLevel": "strict",
+  "validationAction": "error",
+  "validator": {
+    "$jsonSchema": {
+      "bsonType": "object",
+      "required": ["_id", "owner", "ccy", "bal", "status", "creDtTm", "schemaVersion"],
+      "additionalProperties": false,
+      "properties": {
+        "_id": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "description": "Account UUID (API id)"
+        },
+        "owner": {
+          "bsonType": "object",
+          "required": ["nm"],
+          "additionalProperties": false,
+          "properties": {
+            "nm": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "id": {
+              "bsonType": "object",
+              "required": ["othr"],
+              "additionalProperties": false,
+              "properties": {
+                "othr": {
+                  "bsonType": "object",
+                  "required": ["id"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "bsonType": "string",
+                      "minLength": 1,
+                      "maxLength": 35
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ccy": {
+          "bsonType": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "bal": {
+          "bsonType": "object",
+          "required": ["valueMinor", "ccy"],
+          "additionalProperties": false,
+          "properties": {
+            "valueMinor": {
+              "bsonType": ["int", "long"],
+              "minimum": 0
+            },
+            "ccy": {
+              "bsonType": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          }
+        },
+        "status": {
+          "enum": ["active", "closed"]
+        },
+        "creDtTm": {
+          "bsonType": "date"
+        },
+        "schemaVersion": {
+          "bsonType": "int",
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "owner": {
+    "nm": "Acme Corp",
+    "id": { "othr": { "id": "user_123" } }
+  },
+  "ccy": "USD",
+  "bal": { "value": "1000.00", "ccy": "USD" },
+  "status": "active",
+  "creDtTm": "2026-06-23T12:00:00Z"
+}

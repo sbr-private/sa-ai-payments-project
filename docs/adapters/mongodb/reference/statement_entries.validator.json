@@ -1,0 +1,96 @@
+{
+  "collection": "statement_entries",
+  "validationLevel": "strict",
+  "validationAction": "error",
+  "validator": {
+    "$jsonSchema": {
+      "bsonType": "object",
+      "required": [
+        "_id",
+        "acctId",
+        "txId",
+        "endToEndId",
+        "amt",
+        "cdtDbtInd",
+        "bal",
+        "bookgDt",
+        "sts",
+        "creDtTm",
+        "schemaVersion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "_id": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "description": "Entry UUID (ntryRef)"
+        },
+        "acctId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "txId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "endToEndId": {
+          "bsonType": "string",
+          "minLength": 1,
+          "maxLength": 35
+        },
+        "amt": {
+          "bsonType": "object",
+          "required": ["valueMinor", "ccy"],
+          "additionalProperties": false,
+          "properties": {
+            "valueMinor": {
+              "bsonType": ["int", "long"],
+              "minimum": 1,
+              "description": "Positive magnitude; direction is cdtDbtInd"
+            },
+            "ccy": {
+              "bsonType": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          }
+        },
+        "cdtDbtInd": {
+          "enum": ["DBIT", "CRDT"]
+        },
+        "bal": {
+          "bsonType": "object",
+          "required": ["valueMinor", "ccy", "cdtDbtInd"],
+          "additionalProperties": false,
+          "properties": {
+            "valueMinor": {
+              "bsonType": ["int", "long"],
+              "minimum": 0
+            },
+            "ccy": {
+              "bsonType": "string",
+              "pattern": "^[A-Z]{3}$"
+            },
+            "cdtDbtInd": {
+              "enum": ["DBIT", "CRDT"]
+            }
+          }
+        },
+        "bookgDt": {
+          "bsonType": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "sts": {
+          "enum": ["BOOK"]
+        },
+        "creDtTm": {
+          "bsonType": "date"
+        },
+        "schemaVersion": {
+          "bsonType": "int",
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

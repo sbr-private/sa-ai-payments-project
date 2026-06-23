@@ -1,0 +1,7 @@
+{
+  "owner": {
+    "nm": "Acme Corp",
+    "id": { "othr": { "id": "user_123" } }
+  },
+  "ccy": "USD"
+}

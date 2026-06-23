@@ -1,0 +1,47 @@
+{
+  "database": "payments_ledger",
+  "indexes": [
+    {
+      "table": "accounts",
+      "name": "accounts_pkey",
+      "columns": ["id"],
+      "options": { "primary_key": true },
+      "purpose": "Primary key"
+    },
+    {
+      "table": "payment_transactions",
+      "name": "payment_transactions_end_to_end_id_unique",
+      "columns": ["end_to_end_id"],
+      "options": { "unique": true },
+      "purpose": "Idempotency key — SPEC §7.1; one row per EndToEndId"
+    },
+    {
+      "table": "payment_transactions",
+      "name": "idx_payment_transactions_dbtr_cre_dt_tm",
+      "columns": ["dbtr_acct_id", "cre_dt_tm DESC"],
+      "options": {},
+      "purpose": "Debtor account payment history (control centre)"
+    },
+    {
+      "table": "statement_entries",
+      "name": "idx_statement_entries_acct_cre_dt_tm_ntry_ref",
+      "columns": ["acct_id", "cre_dt_tm DESC", "ntry_ref DESC"],
+      "options": {},
+      "purpose": "Statement pagination — newest first with stable cursor (OP-005)"
+    },
+    {
+      "table": "statement_entries",
+      "name": "idx_statement_entries_end_to_end_id",
+      "columns": ["end_to_end_id"],
+      "options": {},
+      "purpose": "Support lookup / double-entry verification by E2E"
+    },
+    {
+      "table": "statement_entries",
+      "name": "idx_statement_entries_tx_id",
+      "columns": ["tx_id"],
+      "options": {},
+      "purpose": "Verify exactly two entries per ACSC transaction (SC-008)"
+    }
+  ]
+}

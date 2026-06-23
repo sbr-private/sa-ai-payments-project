@@ -1,0 +1,23 @@
+[
+  {
+    "email": "payer@demo",
+    "password": "demo",
+    "role": "payer",
+    "displayName": "Demo Payer",
+    "accountIds": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+  },
+  {
+    "email": "support@demo",
+    "password": "demo",
+    "role": "support",
+    "displayName": "Demo Support",
+    "accountIds": []
+  },
+  {
+    "email": "benchmark@demo",
+    "password": "demo",
+    "role": "benchmark",
+    "displayName": "Benchmark Runner",
+    "accountIds": []
+  }
+]

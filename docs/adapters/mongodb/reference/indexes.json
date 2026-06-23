@@ -1,0 +1,47 @@
+{
+  "database": "payments_ledger",
+  "indexes": [
+    {
+      "collection": "accounts",
+      "name": "_id_",
+      "keys": { "_id": 1 },
+      "options": {},
+      "purpose": "Primary key (default MongoDB index)"
+    },
+    {
+      "collection": "payment_transactions",
+      "name": "uniq_pmtId_endToEndId",
+      "keys": { "pmtId.endToEndId": 1 },
+      "options": { "unique": true },
+      "purpose": "Idempotency key — SPEC §7.1; one document per EndToEndId"
+    },
+    {
+      "collection": "payment_transactions",
+      "name": "idx_dbtrAcctId_creDtTm",
+      "keys": { "dbtrAcctId": 1, "creDtTm": -1 },
+      "options": {},
+      "purpose": "Debtor account payment history (control centre)"
+    },
+    {
+      "collection": "statement_entries",
+      "name": "idx_acctId_creDtTm_id",
+      "keys": { "acctId": 1, "creDtTm": -1, "_id": -1 },
+      "options": {},
+      "purpose": "Statement pagination — newest first with stable cursor (OP-005)"
+    },
+    {
+      "collection": "statement_entries",
+      "name": "idx_endToEndId",
+      "keys": { "endToEndId": 1 },
+      "options": {},
+      "purpose": "Support lookup / double-entry verification by E2E"
+    },
+    {
+      "collection": "statement_entries",
+      "name": "idx_txId",
+      "keys": { "txId": 1 },
+      "options": {},
+      "purpose": "Verify exactly two entries per ACSC transaction (SC-008)"
+    }
+  ]
+}

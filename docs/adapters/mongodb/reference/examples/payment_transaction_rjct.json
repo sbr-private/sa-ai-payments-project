@@ -1,0 +1,24 @@
+{
+  "_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "pmtId": {
+    "instrId": "INSTR-20260623-0002",
+    "endToEndId": "E2E-INV-2024-0999"
+  },
+  "dbtrAcctId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "cdtrAcctId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "instdAmt": { "valueMinor": 200000, "ccy": "USD" },
+  "txSts": "RJCT",
+  "stsRsnInf": [
+    {
+      "rsn": { "cd": "AM04" },
+      "addtlInf": ["Insufficient funds on debtor account"]
+    }
+  ],
+  "idempotencyBody": {
+    "dbtrAcctId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "cdtrAcctId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "instdAmt": { "valueMinor": 200000, "ccy": "USD" }
+  },
+  "creDtTm": { "$date": "2026-06-23T12:15:00.000Z" },
+  "schemaVersion": 1
+}

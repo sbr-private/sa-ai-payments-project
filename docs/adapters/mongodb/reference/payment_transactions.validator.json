@@ -1,0 +1,145 @@
+{
+  "collection": "payment_transactions",
+  "validationLevel": "strict",
+  "validationAction": "error",
+  "validator": {
+    "$jsonSchema": {
+      "bsonType": "object",
+      "required": [
+        "_id",
+        "pmtId",
+        "dbtrAcctId",
+        "cdtrAcctId",
+        "instdAmt",
+        "txSts",
+        "idempotencyBody",
+        "creDtTm",
+        "schemaVersion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "_id": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "description": "Internal transaction UUID (txId)"
+        },
+        "pmtId": {
+          "bsonType": "object",
+          "required": ["endToEndId"],
+          "additionalProperties": false,
+          "properties": {
+            "endToEndId": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 35
+            },
+            "instrId": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 35
+            }
+          }
+        },
+        "dbtrAcctId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "cdtrAcctId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "instdAmt": {
+          "bsonType": "object",
+          "required": ["valueMinor", "ccy"],
+          "additionalProperties": false,
+          "properties": {
+            "valueMinor": {
+              "bsonType": ["int", "long"],
+              "minimum": 1
+            },
+            "ccy": {
+              "bsonType": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          }
+        },
+        "txSts": {
+          "enum": ["PDNG", "ACSC", "RJCT"]
+        },
+        "stsRsnInf": {
+          "bsonType": "array",
+          "minItems": 1,
+          "items": {
+            "bsonType": "object",
+            "required": ["rsn"],
+            "additionalProperties": false,
+            "properties": {
+              "rsn": {
+                "bsonType": "object",
+                "required": ["cd"],
+                "additionalProperties": false,
+                "properties": {
+                  "cd": {
+                    "enum": ["AM04", "AC04", "AM12", "CURR", "DU04", "AG01", "BE01"]
+                  }
+                }
+              },
+              "addtlInf": {
+                "bsonType": "array",
+                "items": { "bsonType": "string" }
+              }
+            }
+          }
+        },
+        "rmtInf": {
+          "bsonType": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ustrd": {
+              "bsonType": "array",
+              "items": { "bsonType": "string" }
+            }
+          }
+        },
+        "idempotencyBody": {
+          "bsonType": "object",
+          "required": ["dbtrAcctId", "cdtrAcctId", "instdAmt"],
+          "additionalProperties": false,
+          "properties": {
+            "dbtrAcctId": {
+              "bsonType": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "cdtrAcctId": {
+              "bsonType": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "instdAmt": {
+              "bsonType": "object",
+              "required": ["valueMinor", "ccy"],
+              "additionalProperties": false,
+              "properties": {
+                "valueMinor": {
+                  "bsonType": ["int", "long"],
+                  "minimum": 1
+                },
+                "ccy": {
+                  "bsonType": "string",
+                  "pattern": "^[A-Z]{3}$"
+                }
+              }
+            }
+          }
+        },
+        "creDtTm": {
+          "bsonType": "date"
+        },
+        "schemaVersion": {
+          "bsonType": "int",
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "stmt": {
+    "id": "STMT-20260623-a1b2",
+    "creDtTm": "2026-06-23T12:05:00Z",
+    "acct": {
+      "id": { "othr": { "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890" } },
+      "ccy": "USD"
+    },
+    "bal": [
+      {
+        "tp": { "cdOrPrtry": { "cd": "CLBD" } },
+        "amt": { "value": "950.00", "ccy": "USD" },
+        "cdtDbtInd": "CRDT",
+        "dt": { "dt": "2026-06-23" }
+      }
+    ],
+    "ntry": [
+      {
+        "ntryRef": "e001a2b3-c4d5-6789-abcd-ef0123456789",
+        "amt": { "value": "50.00", "ccy": "USD" },
+        "cdtDbtInd": "DBIT",
+        "sts": "BOOK",
+        "bookgDt": { "dt": "2026-06-23" },
+        "ntryDtls": [
+          {
+            "txDtls": [
+              {
+                "refs": { "endToEndId": "E2E-INV-2024-0558" }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ntryRef": "e002b3c4-d5e6-7890-bcde-f12345678901",
+        "amt": { "value": "1000.00", "ccy": "USD" },
+        "cdtDbtInd": "CRDT",
+        "sts": "BOOK",
+        "bookgDt": { "dt": "2026-06-23" },
+        "ntryDtls": [
+          {
+            "txDtls": [
+              {
+                "refs": { "endToEndId": "E2E-SEED-0001" }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "nextCursor": null,
+  "hasMore": false
+}
