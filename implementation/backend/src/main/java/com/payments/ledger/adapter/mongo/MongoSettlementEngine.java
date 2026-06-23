@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.bson.Document;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -71,46 +72,39 @@ final class MongoSettlementEngine {
     }
 
     if (command.getInstructedAmount().getValueMinor() <= 0) {
-      return TransferOutcome.created(
-          insertRejection(command, List.of(new StatusReason("AM12", List.of()))));
+      return rejectTransfer(command, List.of(new StatusReason("AM12", List.of())));
     }
 
     if (command.getDebtorAccountId().equals(command.getCreditorAccountId())) {
-      return TransferOutcome.created(
-          insertRejection(command, List.of(new StatusReason("AG01", List.of()))));
+      return rejectTransfer(command, List.of(new StatusReason("AG01", List.of())));
     }
 
     Optional<Account> debtorOpt = findAccount(command.getDebtorAccountId());
     Optional<Account> creditorOpt = findAccount(command.getCreditorAccountId());
 
     if (debtorOpt.isEmpty() || creditorOpt.isEmpty()) {
-      return TransferOutcome.created(
-          insertRejection(command, List.of(new StatusReason("BE01", List.of()))));
+      return rejectTransfer(command, List.of(new StatusReason("BE01", List.of())));
     }
 
     Account debtor = debtorOpt.get();
     Account creditor = creditorOpt.get();
 
     if (debtor.getStatus() == AccountStatus.closed || creditor.getStatus() == AccountStatus.closed) {
-      return TransferOutcome.created(
-          insertRejection(command, List.of(new StatusReason("AC04", List.of()))));
+      return rejectTransfer(command, List.of(new StatusReason("AC04", List.of())));
     }
 
     if (!debtor.getCcy().equals(command.getInstructedAmount().getCcy())
         || !creditor.getCcy().equals(command.getInstructedAmount().getCcy())
         || !debtor.getCcy().equals(creditor.getCcy())) {
-      return TransferOutcome.created(
-          insertRejection(command, List.of(new StatusReason("CURR", List.of()))));
+      return rejectTransfer(command, List.of(new StatusReason("CURR", List.of())));
     }
 
     long amountMinor = command.getInstructedAmount().getValueMinor();
     if (debtor.getBalance().getValueMinor() < amountMinor) {
-      return TransferOutcome.created(
-          insertRejection(
-              command,
-              List.of(
-                  new StatusReason(
-                      "AM04", List.of("Insufficient funds on debtor account")))));
+      return rejectTransfer(
+          command,
+          List.of(
+              new StatusReason("AM04", List.of("Insufficient funds on debtor account"))));
     }
 
     return executeSettlement(command, debtor, creditor, fingerprint);
@@ -235,23 +229,19 @@ final class MongoSettlementEngine {
     try {
       firstUpdated = debitOrCredit(firstId, firstIsDebtor, amountMinor, ccy);
       if (firstUpdated == null) {
-        return TransferOutcome.created(
-            insertRejection(
-                command,
-                List.of(
-                    new StatusReason(
-                        "AM04", List.of("Insufficient funds on debtor account")))));
+        return rejectTransfer(
+            command,
+            List.of(
+                new StatusReason("AM04", List.of("Insufficient funds on debtor account"))));
       }
 
       secondUpdated = debitOrCredit(secondId, !firstIsDebtor, amountMinor, ccy);
       if (secondUpdated == null) {
         rollbackBalance(firstId, firstIsDebtor, amountMinor);
-        return TransferOutcome.created(
-            insertRejection(
-                command,
-                List.of(
-                    new StatusReason(
-                        "AM04", List.of("Insufficient funds on debtor account")))));
+        return rejectTransfer(
+            command,
+            List.of(
+                new StatusReason("AM04", List.of("Insufficient funds on debtor account"))));
       }
 
       Instant now = Instant.now();
@@ -281,9 +271,15 @@ final class MongoSettlementEngine {
               List.of(),
               now);
 
-      mongoTemplate.insert(
-          MongoPaymentTransactionMapper.toDocument(transaction, fingerprint),
-          MongoCollections.PAYMENT_TRANSACTIONS);
+      try {
+        mongoTemplate.insert(
+            MongoPaymentTransactionMapper.toDocument(transaction, fingerprint),
+            MongoCollections.PAYMENT_TRANSACTIONS);
+      } catch (DuplicateKeyException ex) {
+        rollbackBalance(debtor.getId(), true, amountMinor);
+        rollbackBalance(creditor.getId(), false, amountMinor);
+        return resolveIdempotencyRace(command);
+      }
 
       StatementEntry debtorEntry =
           new StatementEntry(
@@ -358,7 +354,7 @@ final class MongoSettlementEngine {
         MongoCollections.ACCOUNTS);
   }
 
-  private PaymentTransaction insertRejection(
+  private TransferOutcome rejectTransfer(
       TransferCommand command, List<StatusReason> reasons) {
     Instant now = Instant.now();
     PaymentTransaction transaction =
@@ -373,12 +369,39 @@ final class MongoSettlementEngine {
             reasons,
             now);
 
-    mongoTemplate.insert(
-        MongoPaymentTransactionMapper.toDocument(
-            transaction, IdempotencyFingerprint.from(command)),
-        MongoCollections.PAYMENT_TRANSACTIONS);
+    try {
+      mongoTemplate.insert(
+          MongoPaymentTransactionMapper.toDocument(
+              transaction, IdempotencyFingerprint.from(command)),
+          MongoCollections.PAYMENT_TRANSACTIONS);
+      return TransferOutcome.created(transaction);
+    } catch (DuplicateKeyException ex) {
+      return resolveIdempotencyRace(command);
+    }
+  }
 
-    return transaction;
+  private TransferOutcome resolveIdempotencyRace(TransferCommand command) {
+    PaymentTransaction existing =
+        findByEndToEndId(command.getEndToEndId())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Duplicate endToEndId insert without existing row: "
+                            + command.getEndToEndId()));
+
+    Document existingDoc =
+        mongoTemplate.findOne(
+            new Query(Criteria.where("pmtId.endToEndId").is(command.getEndToEndId())),
+            Document.class,
+            MongoCollections.PAYMENT_TRANSACTIONS);
+    IdempotencyFingerprint stored =
+        MongoPaymentTransactionMapper.fingerprintFromDocument(existingDoc);
+    IdempotencyFingerprint requested = IdempotencyFingerprint.from(command);
+
+    if (requested.matches(stored)) {
+      return TransferOutcome.replay(existing);
+    }
+    return TransferOutcome.conflict(existing);
   }
 
   private void ensureSettlementAccount() {

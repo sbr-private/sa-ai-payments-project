@@ -6,6 +6,8 @@ import com.payments.ledger.domain.auth.UnauthorizedException;
 import com.payments.ledger.domain.exception.AccountNotFoundException;
 import com.payments.ledger.domain.exception.ForbiddenException;
 import com.payments.ledger.domain.exception.PaymentTransactionNotFoundException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +38,20 @@ public class GlobalExceptionHandler {
             .collect(
                 java.util.stream.Collectors.toMap(
                     FieldError::getField, error -> error.getDefaultMessage(), (a, b) -> a));
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ErrorResponse.of("VALIDATION_ERROR", "Request validation failed", details));
+  }
+
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<ErrorResponse> constraintViolation(ConstraintViolationException ex) {
+    Map<String, Object> details =
+        ex.getConstraintViolations().stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    violation -> violation.getPropertyPath().toString(),
+                    ConstraintViolation::getMessage,
+                    (a, b) -> a));
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(ErrorResponse.of("VALIDATION_ERROR", "Request validation failed", details));

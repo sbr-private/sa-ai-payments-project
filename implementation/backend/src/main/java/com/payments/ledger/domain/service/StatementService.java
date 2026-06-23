@@ -39,7 +39,7 @@ public class StatementService {
             .findAccountById(accountId)
             .orElseThrow(() -> new AccountNotFoundException(accountId));
 
-    int effectiveLimit = limit <= 0 ? 20 : limit;
+    int effectiveLimit = limit;
     StatementPage page =
         ledgerRepository.findStatementEntries(accountId, effectiveLimit, cursor);
 

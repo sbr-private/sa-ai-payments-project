@@ -186,17 +186,18 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 
 | Done | Pending |
 |------|---------|
-| Spring Boot scaffold | Statement pagination (SC-011) |
-| `/v1/health`, `/v1/ready` | PostgreSQL adapter operations (fast follow) |
-| Demo auth (`POST /auth/login`, `X-Demo-User`) | Scenario tests (SC-001–SC-015) |
-| `POST /accounts`, `GET /accounts/{id}` — Mongo | Concurrency hardening (SC-010) |
+| Spring Boot scaffold | PostgreSQL adapter operations (fast follow) |
+| `/v1/health`, `/v1/ready` | Automated scenario runner (SC-001–SC-015) |
+| Demo auth (`POST /auth/login`, `X-Demo-User`) | |
+| `POST /accounts`, `GET /accounts/{id}` — Mongo | |
 | Test helpers — `POST /test/accounts/{id}/credit`, `/close` | |
 | `POST /payment-initiations` — Mongo (SC-002 happy path) | |
-| `GET /accounts/{id}/statements` — Mongo (basic list) | |
+| `GET /accounts/{id}/statements` — Mongo with pagination (SC-011) | |
 | Sample data loader (`LOAD_SAMPLE_DATA=true`) | |
 | Rejection paths — AM04, AC04, AG01, AM12, CURR, BE01 | |
 | Idempotency replay / conflict — SC-004, SC-005 | |
 | `GET /payment-initiations/transactions/{endToEndId}` | |
+| Concurrent settlement — SC-010 | |
 
 ## Package layout (planned)
 
