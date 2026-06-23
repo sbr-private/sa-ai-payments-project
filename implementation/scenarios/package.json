@@ -1,0 +1,14 @@
+{
+  "name": "payments-scenarios",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HTTP acceptance scenario runner (SC-001–SC-015)",
+  "type": "module",
+  "scripts": {
+    "test": "node run.mjs",
+    "test:scenarios": "node run.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

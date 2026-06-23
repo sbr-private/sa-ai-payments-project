@@ -229,19 +229,13 @@ final class MongoSettlementEngine {
     try {
       firstUpdated = debitOrCredit(firstId, firstIsDebtor, amountMinor, ccy);
       if (firstUpdated == null) {
-        return rejectTransfer(
-            command,
-            List.of(
-                new StatusReason("AM04", List.of("Insufficient funds on debtor account"))));
+        return resolveDebitFailure(command);
       }
 
       secondUpdated = debitOrCredit(secondId, !firstIsDebtor, amountMinor, ccy);
       if (secondUpdated == null) {
         rollbackBalance(firstId, firstIsDebtor, amountMinor);
-        return rejectTransfer(
-            command,
-            List.of(
-                new StatusReason("AM04", List.of("Insufficient funds on debtor account"))));
+        return resolveDebitFailure(command);
       }
 
       Instant now = Instant.now();
@@ -276,49 +270,117 @@ final class MongoSettlementEngine {
             MongoPaymentTransactionMapper.toDocument(transaction, fingerprint),
             MongoCollections.PAYMENT_TRANSACTIONS);
       } catch (DuplicateKeyException ex) {
+        if (supersedeSpuriousRejection(command, fingerprint, transaction)) {
+          return insertSettlementEntries(
+              command, debtor, creditor, transaction, debtorBalanceMinor, creditorBalanceMinor, now, bookingDate);
+        }
         rollbackBalance(debtor.getId(), true, amountMinor);
         rollbackBalance(creditor.getId(), false, amountMinor);
         return resolveIdempotencyRace(command);
       }
 
-      StatementEntry debtorEntry =
-          new StatementEntry(
-              UUID.randomUUID(),
-              debtor.getId(),
-              txId,
-              command.getEndToEndId(),
-              command.getInstructedAmount(),
-              CreditDebitIndicator.DBIT,
-              new Money(debtorBalanceMinor, ccy),
-              bookingDate,
-              now);
-
-      StatementEntry creditorEntry =
-          new StatementEntry(
-              UUID.randomUUID(),
-              creditor.getId(),
-              txId,
-              command.getEndToEndId(),
-              command.getInstructedAmount(),
-              CreditDebitIndicator.CRDT,
-              new Money(creditorBalanceMinor, ccy),
-              bookingDate,
-              now);
-
-      mongoTemplate.insert(
-          MongoStatementEntryMapper.toDocument(debtorEntry),
-          MongoCollections.STATEMENT_ENTRIES);
-      mongoTemplate.insert(
-          MongoStatementEntryMapper.toDocument(creditorEntry),
-          MongoCollections.STATEMENT_ENTRIES);
-
-      return TransferOutcome.created(transaction);
+      return insertSettlementEntries(
+          command, debtor, creditor, transaction, debtorBalanceMinor, creditorBalanceMinor, now, bookingDate);
     } catch (RuntimeException ex) {
       if (firstUpdated != null && secondUpdated == null) {
         rollbackBalance(firstId, firstIsDebtor, amountMinor);
       }
       throw ex;
     }
+  }
+
+  private TransferOutcome insertSettlementEntries(
+      TransferCommand command,
+      Account debtor,
+      Account creditor,
+      PaymentTransaction transaction,
+      long debtorBalanceMinor,
+      long creditorBalanceMinor,
+      Instant now,
+      LocalDate bookingDate) {
+    String ccy = command.getInstructedAmount().getCcy();
+
+    StatementEntry debtorEntry =
+        new StatementEntry(
+            UUID.randomUUID(),
+            debtor.getId(),
+            transaction.getTxId(),
+            command.getEndToEndId(),
+            command.getInstructedAmount(),
+            CreditDebitIndicator.DBIT,
+            new Money(debtorBalanceMinor, ccy),
+            bookingDate,
+            now);
+
+    StatementEntry creditorEntry =
+        new StatementEntry(
+            UUID.randomUUID(),
+            creditor.getId(),
+            transaction.getTxId(),
+            command.getEndToEndId(),
+            command.getInstructedAmount(),
+            CreditDebitIndicator.CRDT,
+            new Money(creditorBalanceMinor, ccy),
+            bookingDate,
+            now);
+
+    mongoTemplate.insert(
+        MongoStatementEntryMapper.toDocument(debtorEntry),
+        MongoCollections.STATEMENT_ENTRIES);
+    mongoTemplate.insert(
+        MongoStatementEntryMapper.toDocument(creditorEntry),
+        MongoCollections.STATEMENT_ENTRIES);
+
+    return TransferOutcome.created(transaction);
+  }
+
+  private TransferOutcome resolveDebitFailure(TransferCommand command) {
+    Optional<PaymentTransaction> existing = findByEndToEndId(command.getEndToEndId());
+    if (existing.isPresent()) {
+      return resolveIdempotencyRace(command);
+    }
+    return rejectTransfer(
+        command,
+        List.of(
+            new StatusReason("AM04", List.of("Insufficient funds on debtor account"))));
+  }
+
+  private boolean supersedeSpuriousRejection(
+      TransferCommand command,
+      IdempotencyFingerprint fingerprint,
+      PaymentTransaction settlementTransaction) {
+    Document existingDoc =
+        mongoTemplate.findOne(
+            new Query(Criteria.where("pmtId.endToEndId").is(command.getEndToEndId())),
+            Document.class,
+            MongoCollections.PAYMENT_TRANSACTIONS);
+    if (existingDoc == null) {
+      return false;
+    }
+
+    PaymentTransaction existing = MongoPaymentTransactionMapper.toDomain(existingDoc);
+    if (existing.getStatus() != TransactionStatus.RJCT) {
+      return false;
+    }
+    boolean am04 =
+        existing.getStatusReasons().stream().anyMatch(reason -> "AM04".equals(reason.getCode()));
+    if (!am04) {
+      return false;
+    }
+
+    IdempotencyFingerprint stored =
+        MongoPaymentTransactionMapper.fingerprintFromDocument(existingDoc);
+    if (!fingerprint.matches(stored)) {
+      return false;
+    }
+
+    mongoTemplate.remove(
+        new Query(Criteria.where("pmtId.endToEndId").is(command.getEndToEndId())),
+        MongoCollections.PAYMENT_TRANSACTIONS);
+    mongoTemplate.insert(
+        MongoPaymentTransactionMapper.toDocument(settlementTransaction, fingerprint),
+        MongoCollections.PAYMENT_TRANSACTIONS);
+    return true;
   }
 
   private Document debitOrCredit(UUID accountId, boolean debit, long amountMinor, String ccy) {
@@ -356,6 +418,11 @@ final class MongoSettlementEngine {
 
   private TransferOutcome rejectTransfer(
       TransferCommand command, List<StatusReason> reasons) {
+    Optional<PaymentTransaction> existing = findByEndToEndId(command.getEndToEndId());
+    if (existing.isPresent()) {
+      return resolveIdempotencyRace(command);
+    }
+
     Instant now = Instant.now();
     PaymentTransaction transaction =
         new PaymentTransaction(

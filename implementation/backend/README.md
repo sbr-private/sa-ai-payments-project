@@ -123,6 +123,19 @@ BASE_URL=http://localhost:8080/v1 DEMO_USER=benchmark@demo ./scripts/smoke-auth-
 
 `jq` is optional; responses are pretty-printed when it is installed.
 
+### Acceptance scenarios (SC-001–SC-015)
+
+Full HTTP compliance suite in `implementation/scenarios/`. Requires the API with test helpers enabled:
+
+```bash
+ENABLE_TEST_HELPERS=true mvn spring-boot:run          # in another terminal
+cd implementation/scenarios
+npm run test:scenarios -- --adapter=mongo
+# or: node run.mjs --base-url=http://localhost:8080/v1 --scenario=SC-002,SC-010
+```
+
+Uses `X-Demo-User: benchmark@demo` on every request. Pass criteria: all 15 scenarios green.
+
 ### Manual curl (single steps)
 
 ```bash
@@ -187,7 +200,7 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 | Done | Pending |
 |------|---------|
 | Spring Boot scaffold | PostgreSQL adapter operations (fast follow) |
-| `/v1/health`, `/v1/ready` | Automated scenario runner (SC-001–SC-015) |
+| `/v1/health`, `/v1/ready` | PostgreSQL adapter operations (fast follow) |
 | Demo auth (`POST /auth/login`, `X-Demo-User`) | |
 | `POST /accounts`, `GET /accounts/{id}` — Mongo | |
 | Test helpers — `POST /test/accounts/{id}/credit`, `/close` | |
@@ -198,6 +211,7 @@ Several acceptance scenarios fund balances and close accounts via test-only API 
 | Idempotency replay / conflict — SC-004, SC-005 | |
 | `GET /payment-initiations/transactions/{endToEndId}` | |
 | Concurrent settlement — SC-010 | |
+| HTTP scenario runner — `implementation/scenarios/` (SC-001–SC-015) | |
 
 ## Package layout (planned)
 
