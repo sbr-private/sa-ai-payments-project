@@ -2,24 +2,19 @@
 <%- include('../partials/header', { user, currentPath }) %>
 
 <div class="page-header">
-  <h1>Control centre</h1>
-  <p class="lead">Investigate payments by <strong>endToEndId</strong> — pain.002 lookup for support agents</p>
+  <h1>Payment status</h1>
+  <p class="lead">Look up your payments by <strong>endToEndId</strong> — pain.002 status report</p>
 </div>
 
 <section class="card">
-  <form class="stack" method="get" action="/support/search">
+  <form class="stack" method="get" action="/payer/payments/status">
     <label>
       EndToEndId
-      <input class="mono" name="endToEndId" maxlength="35" required value="<%= endToEndId %>" placeholder="E2E-INV-2024-0999" />
+      <input class="mono" name="endToEndId" maxlength="35" value="<%= endToEndId %>" placeholder="E2E-INV-2024-0558" />
     </label>
-    <button class="btn" type="submit">Search transaction</button>
+    <button class="btn" type="submit">Look up payment</button>
   </form>
-
-  <p class="muted" style="margin:1rem 0 0;font-size:0.85rem">Quick links:
-    <% hints.forEach(function(hint, index) { %>
-    <a href="/support/search?endToEndId=<%= encodeURIComponent(hint.id) %>"><%= hint.label %></a><%= index < hints.length - 1 ? ' ·' : '' %>
-    <% }) %>
-  </p>
+  <p class="muted" style="margin:1rem 0 0;font-size:0.85rem">Or select an EndToEndId from your <a href="/payer">account statement</a>.</p>
 </section>
 
 <% if (error) { %>
@@ -29,25 +24,19 @@
 <% if (result) { %>
 <section class="card">
   <div class="card-section-title">
-    <h2>Transaction result</h2>
+    <h2>Transaction status</h2>
     <span class="badge <%= result.txSts === 'ACSC' ? 'ok' : result.txSts === 'RJCT' ? 'err' : 'warn' %>"><%= result.txSts %></span>
   </div>
   <p>EndToEndId<br><span class="mono"><%= result.orgnlEndToEndId %></span></p>
 
   <% if (result.stsRsnInf?.length) { %>
-  <h3 style="margin-top:1.5rem;font-size:0.9rem">Status reason (stsRsnInf)</h3>
+  <h3 style="margin-top:1.5rem;font-size:0.9rem">Status reason</h3>
   <% result.stsRsnInf.forEach(function(reason) { %>
   <p>Code <span class="mono"><%= reason.rsn.cd %></span></p>
   <% if (reason.addtlInf?.length) { %>
   <p class="muted"><%= reason.addtlInf.join(' ') %></p>
   <% } %>
   <% }) %>
-  <% } %>
-
-  <% if (debtorAccountId) { %>
-  <p style="margin-top:1.5rem">
-    <a class="btn ghost" href="/support/accounts/<%= debtorAccountId %>">Drill into debtor account →</a>
-  </p>
   <% } %>
 
   <details>

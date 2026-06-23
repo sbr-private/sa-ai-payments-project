@@ -1,67 +1,76 @@
 <%- include('../partials/head', { title }) %>
-<%- include('../partials/header', { user }) %>
+<%- include('../partials/header', { user, currentPath }) %>
 
-<h1>Payer Portal</h1>
-<p class="muted">Signed in as <%= user.displayName %> (<%= user.email %>)</p>
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <p class="lead">Welcome back, <strong><%= user.displayName %></strong> · <%= user.email %></p>
+</div>
 
-<div class="status-row" style="margin-bottom:1rem">
-  <% if (health?.status === 'ok') { %>
-  <span class="badge ok">API connected</span>
-  <% } else { %>
-  <span class="badge warn">API unavailable</span>
-  <% } %>
+<% if (paymentSuccess && paymentEndToEndId) { %>
+<div class="alert success">
+  Payment <span class="mono"><%= paymentEndToEndId %></span> settled successfully (<strong>ACSC</strong>).
+  Your balance and statement have been updated.
+  <a href="/payer/payments/status?endToEndId=<%= encodeURIComponent(paymentEndToEndId) %>">View pain.002 →</a>
+</div>
+<% } %>
+
+<div class="toolbar">
+  <div class="status-row">
+    <% if (health?.status === 'ok') { %>
+    <span class="badge ok">API online</span>
+    <% } else { %>
+    <span class="badge warn">API offline</span>
+    <% } %>
+    <% if (ready?.status === 'ok') { %>
+    <span class="badge ok">Database ready</span>
+    <% } else if (ready !== null) { %>
+    <span class="badge warn">Database unavailable</span>
+    <% } %>
+  </div>
   <a class="btn" href="/payer/payment/new">Send payment</a>
 </div>
 
 <div class="grid-2">
-  <section class="card">
-    <h2>Account balance</h2>
-    <p class="mono"><%= account.owner.nm %></p>
-    <p style="font-size:1.6rem;font-weight:700;margin:0.5rem 0">
-      <%= account.bal.value %> <%= account.bal.ccy %>
+  <section class="card balance-hero">
+    <p class="card-eyebrow">Available balance</p>
+    <p class="account-name"><%= account.owner.nm %></p>
+    <p class="balance-amount">
+      <%= account.bal.value %><span class="currency"><%= account.bal.ccy %></span>
     </p>
-    <p class="muted mono"><%= account.id %></p>
-    <p>Status: <span class="badge ok"><%= account.status %></span></p>
+    <p class="account-id"><%= account.id %></p>
+    <p style="margin-top:1rem"><span class="badge"><%= account.status %></span></p>
   </section>
 
   <section class="card">
-    <h2>ISO messages</h2>
-    <ul>
-      <li><strong>pain.001</strong> — submit credit transfer initiation</li>
-      <li><strong>pain.002</strong> — payment status report</li>
-      <li><strong>camt.053</strong> — account statement</li>
+    <h2>ISO 20022 messages</h2>
+    <ul class="iso-list">
+      <li>
+        <span class="iso-code">pain.001</span>
+        <span>Submit credit transfer initiation</span>
+      </li>
+      <li>
+        <span class="iso-code">pain.002</span>
+        <span><a href="/payer/payments/status">Look up payment status</a></span>
+      </li>
+      <li>
+        <span class="iso-code">camt.053</span>
+        <span>Account statement entries below</span>
+      </li>
     </ul>
   </section>
 </div>
 
 <section class="card">
-  <h2>Recent statement (camt.053)</h2>
-  <% if (!statement?.stmt?.ntry?.length) { %>
-  <p class="muted">No statement entries yet.</p>
-  <% } else { %>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>EndToEndId</th>
-        <th>Direction</th>
-        <th>Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% statement.stmt.ntry.forEach(function(entry) { %>
-      <tr>
-        <td><%= entry.bookgDt.dt %></td>
-        <td class="mono">
-          <%= entry.ntryDtls?.[0]?.txDtls?.[0]?.refs?.endToEndId || '—' %>
-        </td>
-        <td><%= entry.cdtDbtInd %></td>
-        <td><%= entry.amt.value %> <%= entry.amt.ccy %></td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <% } %>
+  <div class="card-section-title">
+    <h2>Account statement</h2>
+    <span class="badge ok">camt.053</span>
+  </div>
+  <%- include('../partials/statement-table', {
+    statement,
+    e2eLinkPrefix: '/payer/payments/status?endToEndId=',
+    paginationHref: '/payer',
+    cursor,
+  }) %>
 </section>
 
 <%- include('../partials/footer') %>

@@ -51,7 +51,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(config.port, () => {
-  console.log(`Payments frontend listening on http://localhost:${config.port}`);
+  console.log(`AmazingPayments UI  http://localhost:${config.port}`);
   console.log(`Ledger API: ${config.apiUrl}`);
   console.log(`API docs:   http://localhost:${config.port}/api-docs/ledger`);
   if (config.useFixtures) {

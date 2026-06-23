@@ -1,0 +1,45 @@
+<%#
+  locals:
+    statement — StatementPage
+    e2eLinkPrefix — URL prefix before encoded endToEndId
+    paginationHref — base URL for load-more (cursor appended as query)
+    cursor — current cursor (optional)
+%>
+<% if (!statement?.stmt?.ntry?.length) { %>
+<div class="empty-state"><p>No statement entries yet.</p></div>
+<% } else { %>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>EndToEndId</th>
+        <th>Direction</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% statement.stmt.ntry.forEach(function(entry) { %>
+      <tr>
+        <td><%= entry.bookgDt.dt %></td>
+        <td class="mono">
+          <% const e2e = entry.ntryDtls?.[0]?.txDtls?.[0]?.refs?.endToEndId; %>
+          <% if (e2e && e2eLinkPrefix) { %>
+          <a href="<%= e2eLinkPrefix %><%= encodeURIComponent(e2e) %>"><%= e2e %></a>
+          <% } else if (e2e) { %>
+          <%= e2e %>
+          <% } else { %>—<% } %>
+        </td>
+        <td><span class="<%= entry.cdtDbtInd === 'CRDT' ? 'direction-crdt' : 'direction-dbit' %>"><%= entry.cdtDbtInd %></span></td>
+        <td><strong><%= entry.amt.value %></strong> <%= entry.amt.ccy %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% if (statement.hasMore && statement.nextCursor) { %>
+<p style="margin-top:1.25rem">
+  <a class="btn secondary" href="<%= paginationHref %>?cursor=<%= encodeURIComponent(statement.nextCursor) %>">Load more entries</a>
+</p>
+<% } %>
+<% } %>

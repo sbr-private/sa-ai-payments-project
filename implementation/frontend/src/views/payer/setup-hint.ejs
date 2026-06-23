@@ -1,0 +1,22 @@
+<%- include('../partials/head', { title }) %>
+<%- include('../partials/header', { user, currentPath }) %>
+
+<div class="page-header">
+  <h1>Setup required</h1>
+  <p class="lead">Demo ledger data hasn't been loaded yet</p>
+</div>
+
+<section class="card">
+  <p>The payer account <span class="mono"><%= accountId %></span> was not found in the ledger.</p>
+
+  <h3 style="margin-top:1.5rem;font-size:0.95rem">Load seed data</h3>
+  <pre class="mono">mongosh "$MONGODB_URI" --file docs/adapters/mongodb/reference/examples/seed.js</pre>
+
+  <p class="muted" style="margin-top:1rem">Or register and fund an account via the backend smoke script — see <code>implementation/backend/README.md</code>.</p>
+
+  <p style="margin-top:1.5rem">
+    <a class="btn" href="/login">Back to sign in</a>
+  </p>
+</section>
+
+<%- include('../partials/footer') %>

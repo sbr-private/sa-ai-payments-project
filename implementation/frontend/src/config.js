@@ -21,5 +21,10 @@ export const config = {
     supplierAccountId: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
     demoE2eRejected: 'E2E-INV-2024-0999',
     demoE2eSuccess: 'E2E-INV-2024-0558',
+    debtorByE2e: {
+      'E2E-SEED-0001': 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      'E2E-INV-2024-0558': 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      'E2E-INV-2024-0999': 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    },
   },
 };

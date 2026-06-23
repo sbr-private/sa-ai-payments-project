@@ -34,7 +34,14 @@ async function request(method, path, { userEmail, body } = {}) {
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = null;
+    }
+  }
 
   if (!response.ok) {
     throw new ApiError(response.status, payload);
@@ -45,6 +52,10 @@ async function request(method, path, { userEmail, body } = {}) {
 
 async function fixtureRequest(method, path, body) {
   if (method === 'GET' && path === '/health') {
+    return { status: 200, body: { status: 'ok' } };
+  }
+
+  if (method === 'GET' && path === '/ready') {
     return { status: 200, body: { status: 'ok' } };
   }
 
@@ -59,7 +70,9 @@ async function fixtureRequest(method, path, body) {
   if (method === 'GET' && statementMatch) {
     const account = await getFixtureAccount(statementMatch[1]);
     if (!account) throw new ApiError(404, { error: { code: 'NOT_FOUND', message: 'Account not found' } });
-    return { status: 200, body: await getFixtureStatement(statementMatch[1]) };
+    const url = new URL(`http://local${path}`);
+    const cursor = url.searchParams.get('cursor');
+    return { status: 200, body: await getFixtureStatement(statementMatch[1], { cursor }) };
   }
 
   const txMatch = path.match(/^\/payment-initiations\/transactions\/(.+)$/);
@@ -100,6 +113,11 @@ export async function getHealth() {
   return body;
 }
 
+export async function getReady(userEmail) {
+  const { body } = await request('GET', '/ready', { userEmail });
+  return body;
+}
+
 export async function getAccount(userEmail, accountId) {
   const { body } = await request('GET', `/accounts/${accountId}`, { userEmail });
   return body;
@@ -122,4 +140,11 @@ export async function getTransactionStatus(userEmail, endToEndId) {
 export async function createPaymentInitiation(userEmail, initiation) {
   const { status, body } = await request('POST', '/payment-initiations', { userEmail, body: initiation });
   return { status, body };
+}
+
+export function isTransactionLookupUnavailable(error) {
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === 501) return true;
+  if (error.status === 404 && error.body?.error?.code !== 'NOT_FOUND') return true;
+  return false;
 }

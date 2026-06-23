@@ -1,8 +1,14 @@
 <%- include('../partials/head', { title }) %>
-<%- include('../partials/header', { user }) %>
+<%- include('../partials/header', { user, currentPath }) %>
 
-<h1>New payment (pain.001)</h1>
-<p class="muted">From <%= account.owner.nm %> — available <%= account.bal.value %> <%= account.bal.ccy %></p>
+<div class="page-header">
+  <h1>New payment</h1>
+  <p class="lead">Submit a <strong>pain.001</strong> credit transfer from <%= account.owner.nm %> · <%= account.bal.value %> <%= account.bal.ccy %> available</p>
+</div>
+
+<div class="alert info">
+  <strong>Demo tip:</strong> submit <code>2000.00</code> to trigger an <strong>RJCT</strong> / <strong>AM04</strong> insufficient-funds rejection.
+</div>
 
 <% if (error) { %>
 <div class="alert error"><%= error %></div>
@@ -10,47 +16,59 @@
 
 <div class="grid-2">
   <section class="card">
+    <h2>Payment details</h2>
     <form class="stack" method="post" action="/payer/payment/new">
       <label>
-        EndToEndId (idempotency key)
-        <input name="endToEndId" maxlength="35" required value="<%= defaults.endToEndId %>" class="mono" />
+        EndToEndId
+        <span class="muted" style="font-weight:400"> — idempotency key</span>
+        <input class="mono" name="endToEndId" maxlength="35" required value="<%= defaults.endToEndId %>" />
       </label>
       <label>
         Amount
         <input name="amount" required pattern="^[0-9]+(\.[0-9]+)?$" value="<%= defaults.amount %>" />
       </label>
       <label>
-        Creditor account ID
-        <input name="creditorAccountId" required value="<%= supplierAccountId %>" class="mono" />
+        Creditor account
+        <input class="mono" name="creditorAccountId" required value="<%= supplierAccountId %>" />
       </label>
       <label>
-        Remittance (optional)
+        Remittance
+        <span class="muted" style="font-weight:400"> — optional</span>
         <input name="remittance" value="<%= defaults.remittance %>" />
       </label>
-      <button class="btn" type="submit">Submit pain.001</button>
+      <button class="btn btn-lg" type="submit" style="width:100%">Submit pain.001</button>
     </form>
   </section>
 
   <section class="card">
-    <h2>Status report (pain.002)</h2>
+    <div class="card-section-title">
+      <h2>Status report</h2>
+      <span class="badge ok">pain.002</span>
+    </div>
     <% if (!result) { %>
-    <p class="muted">Submit a payment to see the pain.002 response here.</p>
+    <div class="empty-state">
+      <p>Submit a payment to receive the pain.002 response.</p>
+      <p class="muted" style="font-size:0.85rem">Successful payments redirect to your dashboard with updated balance.</p>
+    </div>
     <% } else { %>
     <% const tx = result.orgnlPmtInfAndSts?.[0]?.txInfAndSts?.[0]; %>
-    <p>Group status: <strong><%= result.orgnlGrpInfAndSts.grpSts %></strong></p>
+    <p>Group status <strong><%= result.orgnlGrpInfAndSts.grpSts %></strong></p>
     <% if (tx) { %>
-    <p>EndToEndId: <span class="mono"><%= tx.orgnlEndToEndId %></span></p>
-    <p>
-      txSts:
+    <p style="margin-top:1rem">EndToEndId<br><span class="mono"><%= tx.orgnlEndToEndId %></span></p>
+    <p style="margin-top:0.75rem">
+      Transaction status
       <span class="badge <%= tx.txSts === 'ACSC' ? 'ok' : 'err' %>"><%= tx.txSts %></span>
     </p>
     <% if (tx.stsRsnInf?.length) { %>
-    <p>Reason: <span class="mono"><%= tx.stsRsnInf[0].rsn.cd %></span></p>
+    <p style="margin-top:0.75rem">Reason <span class="mono"><%= tx.stsRsnInf[0].rsn.cd %></span></p>
     <p class="muted"><%= tx.stsRsnInf[0].addtlInf?.join(' ') %></p>
     <% } %>
+    <p style="margin-top:1.25rem">
+      <a class="btn ghost" href="/payer/payments/status?endToEndId=<%= encodeURIComponent(tx.orgnlEndToEndId) %>">View full status</a>
+    </p>
     <% } %>
-    <details style="margin-top:1rem">
-      <summary>Raw JSON</summary>
+    <details>
+      <summary>Raw JSON response</summary>
       <pre class="mono"><%= JSON.stringify(result, null, 2) %></pre>
     </details>
     <% } %>

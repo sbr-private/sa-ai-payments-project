@@ -20,8 +20,8 @@ const frontendSpec = await loadSpec(config.frontendOpenapiPath, [
   { url: `http://localhost:${config.port}`, description: 'Frontend server' },
 ]);
 
-router.use('/ledger', swaggerUi.serve, swaggerUi.setup(ledgerSpec, { customSiteTitle: 'Ledger API — ISO 20022' }));
-router.use('/ui', swaggerUi.serve, swaggerUi.setup(frontendSpec, { customSiteTitle: 'Frontend UI API' }));
+router.use('/ledger', swaggerUi.serve, swaggerUi.setup(ledgerSpec, { customSiteTitle: 'AmazingPayments — Ledger API' }));
+router.use('/ui', swaggerUi.serve, swaggerUi.setup(frontendSpec, { customSiteTitle: 'AmazingPayments — UI API' }));
 
 router.get('/', (_req, res) => {
   res.redirect('/api-docs/ledger');

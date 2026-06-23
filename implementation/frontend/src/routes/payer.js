@@ -5,32 +5,88 @@ import {
   createPaymentInitiation,
   getAccount,
   getHealth,
+  getReady,
   getStatement,
+  getTransactionStatus,
+  isTransactionLookupUnavailable,
 } from '../lib/ledgerClient.js';
 import { config } from '../config.js';
+import { extractTxStatus } from '../lib/demo.js';
 
 const router = Router();
 
 router.use(requireAuth, requireRole('payer'));
 
 router.get('/', async (req, res, next) => {
+  const accountId = req.session.user.accountIds[0];
+  const cursor = String(req.query.cursor || '').trim() || undefined;
+  const paymentSuccess = req.query.payment === 'success';
+  const paymentEndToEndId = String(req.query.endToEndId || '').trim();
+
   try {
-    const accountId = req.session.user.accountIds[0];
-    const [health, account, statement] = await Promise.all([
+    const [health, ready, account, statement] = await Promise.all([
       getHealth().catch(() => null),
+      getReady(req.session.user.email).catch(() => null),
       getAccount(req.session.user.email, accountId),
-      getStatement(req.session.user.email, accountId, { limit: 10 }),
+      getStatement(req.session.user.email, accountId, { limit: 10, cursor }),
     ]);
 
     res.render('payer/dashboard', {
       title: 'Payer Portal',
       health,
+      ready,
       account,
       statement,
       accountId,
+      cursor,
+      paymentSuccess,
+      paymentEndToEndId,
     });
   } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return res.status(404).render('payer/setup-hint', {
+        title: 'Account not found',
+        accountId,
+        user: req.session.user,
+      });
+    }
     next(error);
+  }
+});
+
+router.get('/payments/status', async (req, res, next) => {
+  const endToEndId = String(req.query.endToEndId || '').trim();
+
+  if (!endToEndId) {
+    return res.render('payer/status', {
+      title: 'Payment status',
+      endToEndId: '',
+      result: null,
+      error: null,
+      lookupUnavailable: false,
+    });
+  }
+
+  try {
+    const result = await getTransactionStatus(req.session.user.email, endToEndId);
+    res.render('payer/status', {
+      title: 'Payment status',
+      endToEndId,
+      result,
+      error: null,
+      lookupUnavailable: false,
+    });
+  } catch (error) {
+    const lookupUnavailable = isTransactionLookupUnavailable(error);
+    res.status(error.status || 500).render('payer/status', {
+      title: 'Payment status',
+      endToEndId,
+      result: null,
+      error: lookupUnavailable
+        ? 'Status lookup is not available on the ledger API yet. Use the pain.002 from your payment submission, or enable USE_FIXTURES=true.'
+        : error.message,
+      lookupUnavailable,
+    });
   }
 });
 
@@ -51,6 +107,13 @@ router.get('/payment/new', async (req, res, next) => {
       error: null,
     });
   } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return res.status(404).render('payer/setup-hint', {
+        title: 'Account not found',
+        accountId: req.session.user.accountIds[0],
+        user: req.session.user,
+      });
+    }
     next(error);
   }
 });
@@ -107,6 +170,13 @@ router.post('/payment/new', async (req, res, next) => {
     };
 
     const { body: result } = await createPaymentInitiation(req.session.user.email, initiation);
+    const tx = extractTxStatus(result);
+
+    if (tx?.txSts === 'ACSC') {
+      return res.redirect(
+        `/payer?payment=success&endToEndId=${encodeURIComponent(endToEndId)}`,
+      );
+    }
 
     res.render('payer/payment', {
       title: 'New payment',

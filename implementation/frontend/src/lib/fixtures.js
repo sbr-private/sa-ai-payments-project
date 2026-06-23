@@ -24,12 +24,27 @@ export async function getFixtureAccount(accountId) {
   return null;
 }
 
-export async function getFixtureStatement(accountId) {
+export async function getFixtureStatement(accountId, { cursor } = {}) {
   const statement = await readFixture('camt053-statement.json');
   if (accountId !== config.seed.acmeAccountId) {
     return { stmt: { ...statement.stmt, ntry: [] }, nextCursor: null, hasMore: false };
   }
-  return statement;
+
+  const entries = statement.stmt.ntry;
+  if (!cursor) {
+    const first = entries.slice(0, 1);
+    return {
+      stmt: { ...statement.stmt, ntry: first },
+      nextCursor: entries.length > 1 ? 'fixture-page-2' : null,
+      hasMore: entries.length > 1,
+    };
+  }
+
+  return {
+    stmt: { ...statement.stmt, ntry: entries.slice(1) },
+    nextCursor: null,
+    hasMore: false,
+  };
 }
 
 export async function getFixtureTransaction(endToEndId) {

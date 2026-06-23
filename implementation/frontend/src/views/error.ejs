@@ -1,17 +1,22 @@
 <%- include('partials/head', { title }) %>
-<%- include('partials/header', { user: typeof user !== 'undefined' ? user : null }) %>
+<%- include('partials/header', { user: typeof user !== 'undefined' ? user : null, currentPath }) %>
 
-<div class="card">
+<div class="page-header">
   <h1><%= title %></h1>
+</div>
+
+<section class="card">
   <p><%= message %></p>
   <% if (hint) { %>
   <p class="muted"><%= hint %></p>
   <% } %>
-  <% if (actionHref === 'back') { %>
-  <button class="btn secondary" type="button" onclick="history.back()"><%= actionLabel %></button>
-  <% } else { %>
-  <a class="btn" href="<%= actionHref %>"><%= actionLabel %></a>
-  <% } %>
-</div>
+  <p style="margin-top:1.5rem">
+    <% if (actionHref === 'back') { %>
+    <button class="btn secondary" type="button" onclick="history.back()"><%= actionLabel %></button>
+    <% } else { %>
+    <a class="btn" href="<%= actionHref %>"><%= actionLabel %></a>
+    <% } %>
+  </p>
+</section>
 
 <%- include('partials/footer') %>

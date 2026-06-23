@@ -1,6 +1,6 @@
-# Payments Ledger — Frontend
+# AmazingPayments — Frontend
 
-Node.js / Express demo UI for the ISO 20022 payments ledger.
+Node.js / Express demo UI for the ISO 20022 payments ledger. Styled with [MongoDB Leafy Green](https://www.mongodb.design/foundations/palette) light-mode palette.
 
 Two portals share the same Spring Boot API:
 
@@ -72,14 +72,16 @@ This uses [docs/fixtures/](../../docs/fixtures/) for accounts, statements, payme
 1. Sign in as `payer@demo`
 2. View Acme Corp balance on the dashboard
 3. **New payment** → submit pain.001 with a fresh `endToEndId`
-4. Review pain.002 status on the same page
+4. On **ACSC**, you are redirected to the dashboard with refreshed balance and statement
+5. **Payment status** — look up any of your payments by `endToEndId` (or click a statement row)
 
 ### Support — investigate a rejection
 
 1. Sign in as `support@demo`
-2. Search `E2E-INV-2024-0999`
+2. Search `E2E-INV-2024-0999` (requires ledger `GET /payment-initiations/transactions/{endToEndId}` or `USE_FIXTURES=true`)
 3. Expect `txSts: RJCT`, reason `AM04`
-4. Drill into the Acme account for balance confirmation
+4. **Drill into debtor account** — compare balance vs instructed amount
+5. Use **Load more** on statements when paginated
 
 ## Architecture
 

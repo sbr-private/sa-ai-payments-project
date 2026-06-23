@@ -1,58 +1,40 @@
 <%- include('../partials/head', { title }) %>
-<%- include('../partials/header', { user }) %>
+<%- include('../partials/header', { user, currentPath }) %>
 
-<p><a href="/support">← Back to search</a></p>
+<a class="back-link" href="/support">← Back to search</a>
 
-<h1><%= account.owner.nm %></h1>
-<p class="muted mono"><%= account.id %></p>
+<div class="page-header">
+  <h1><%= account.owner.nm %></h1>
+  <p class="lead mono"><%= account.id %></p>
+</div>
 
 <div class="grid-2">
-  <section class="card">
-    <h2>Balance</h2>
-    <p style="font-size:1.6rem;font-weight:700;margin:0">
-      <%= account.bal.value %> <%= account.bal.ccy %>
+  <section class="card balance-hero">
+    <p class="card-eyebrow">Current balance</p>
+    <p class="balance-amount">
+      <%= account.bal.value %><span class="currency"><%= account.bal.ccy %></span>
     </p>
-    <p>Status: <span class="badge ok"><%= account.status %></span></p>
+    <p style="margin-top:1rem"><span class="badge"><%= account.status %></span></p>
   </section>
 
   <section class="card">
     <h2>Account details</h2>
-    <p>Currency: <%= account.ccy %></p>
-    <p>Created: <%= account.creDtTm %></p>
+    <p>Currency <strong><%= account.ccy %></strong></p>
+    <p>Created <span class="mono"><%= account.creDtTm %></span></p>
   </section>
 </div>
 
 <section class="card">
-  <h2>Statement (camt.053)</h2>
-  <% if (!statement?.stmt?.ntry?.length) { %>
-  <p class="muted">No entries.</p>
-  <% } else { %>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>EndToEndId</th>
-        <th>Direction</th>
-        <th>Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% statement.stmt.ntry.forEach(function(entry) { %>
-      <tr>
-        <td><%= entry.bookgDt.dt %></td>
-        <td class="mono">
-          <% const e2e = entry.ntryDtls?.[0]?.txDtls?.[0]?.refs?.endToEndId; %>
-          <% if (e2e) { %>
-          <a href="/support/search?endToEndId=<%= encodeURIComponent(e2e) %>"><%= e2e %></a>
-          <% } else { %>—<% } %>
-        </td>
-        <td><%= entry.cdtDbtInd %></td>
-        <td><%= entry.amt.value %> <%= entry.amt.ccy %></td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <% } %>
+  <div class="card-section-title">
+    <h2>Statement</h2>
+    <span class="badge ok">camt.053</span>
+  </div>
+  <%- include('../partials/statement-table', {
+    statement,
+    e2eLinkPrefix: '/support/search?endToEndId=',
+    paginationHref: '/support/accounts/' + accountId,
+    cursor,
+  }) %>
 </section>
 
 <%- include('../partials/footer') %>

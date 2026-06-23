@@ -1,36 +1,59 @@
 <%- include('partials/head', { title }) %>
-<div class="login-shell">
-  <div class="card login-card">
-    <h1>Sign in</h1>
-    <p class="muted">Demo theatre auth — password is <code>demo</code> for all users.</p>
+<div class="login-page">
+  <aside class="login-brand-panel">
+    <a class="brand" href="/login">
+      <%- include('partials/brand-mark') %>
+      <span class="brand-text">
+        <span class="brand-name">AmazingPayments</span>
+        <span class="brand-tag">Enterprise payments platform</span>
+      </span>
+    </a>
 
-    <% if (error) { %>
-    <div class="alert error"><%= error %></div>
-    <% } %>
+    <div class="login-hero-copy">
+      <h1>Move money with confidence.</h1>
+      <p>Real-time balances, ISO 20022 messaging, and instant settlement status — built for modern treasury teams.</p>
+    </div>
 
-    <form class="stack" method="post" action="/login">
-      <label>
-        Email
-        <input type="email" name="email" value="<%= email %>" required autocomplete="username" />
-      </label>
-      <label>
-        Password
-        <input type="password" name="password" required autocomplete="current-password" />
-      </label>
-      <button class="btn" type="submit">Sign in</button>
-    </form>
+    <div class="login-features">
+      <div class="login-feature"><span class="login-feature-dot"></span>pain.001 credit transfer initiation</div>
+      <div class="login-feature"><span class="login-feature-dot"></span>pain.002 status reports in real time</div>
+      <div class="login-feature"><span class="login-feature-dot"></span>camt.053 account statements</div>
+    </div>
+  </aside>
 
-    <p class="muted" style="margin-top:1rem">
-      <strong>payer@demo</strong> → Payer portal ·
-      <strong>support@demo</strong> → Control centre
-    </p>
+  <section class="login-form-panel">
+    <div class="login-card">
+      <h2>Welcome back</h2>
+      <p class="subtitle">Sign in to your demo workspace. Password is <code>demo</code> for all users.</p>
 
-    <p class="status-row muted">
-      Ledger API: <span class="mono"><%= apiUrl %></span>
-      <% if (useFixtures) { %>
-      <span class="badge warn">Fixtures</span>
+      <% if (error) { %>
+      <div class="alert error"><%= error %></div>
       <% } %>
-    </p>
-  </div>
+
+      <form class="stack" method="post" action="/login">
+        <label>
+          Email address
+          <input type="email" name="email" value="<%= email %>" required autocomplete="username" placeholder="payer@demo" />
+        </label>
+        <label>
+          Password
+          <input type="password" name="password" required autocomplete="current-password" placeholder="••••" />
+        </label>
+        <button class="btn btn-lg" type="submit" style="width:100%;margin-top:0.25rem">Sign in</button>
+      </form>
+
+      <div class="login-hints">
+        <p class="muted" style="margin:0;font-size:0.85rem">Demo accounts</p>
+        <div class="login-hint-row">
+          <span class="hint-chip"><strong>payer@demo</strong> Payer portal</span>
+          <span class="hint-chip"><strong>support@demo</strong> Control centre</span>
+        </div>
+        <p class="status-row muted" style="margin-top:1rem;font-size:0.8rem">
+          API <span class="mono"><%= apiUrl %></span>
+          <% if (useFixtures) { %><span class="badge warn">Fixtures</span><% } %>
+        </p>
+      </div>
+    </div>
+  </section>
 </div>
 <%- include('partials/footer') %>

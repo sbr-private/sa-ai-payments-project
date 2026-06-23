@@ -69,19 +69,6 @@ paths:
         "302":
           description: Redirect to /login
 
-  /payer:
-    get:
-      tags: [Pages]
-      operationId: payerDashboard
-      summary: Payer dashboard — balance and recent statement
-      responses:
-        "200":
-          description: HTML dashboard
-        "302":
-          description: Redirect to login when unauthenticated
-        "403":
-          description: Wrong role for payer portal
-
   /payer/payment/new:
     get:
       tags: [Pages]
@@ -94,6 +81,7 @@ paths:
       tags: [Pages]
       operationId: submitPayment
       summary: Build pain.001 JSON and POST to ledger /payment-initiations
+      description: Redirects to /payer on ACSC with updated balance and statement.
       requestBody:
         required: true
         content:
@@ -115,7 +103,54 @@ paths:
                   type: string
       responses:
         "200":
-          description: HTML result with pain.002 status report
+          description: HTML result with pain.002 for RJCT or validation errors
+        "302":
+          description: Redirect to /payer?payment=success on ACSC
+
+  /payer/payments/status:
+    get:
+      tags: [Pages]
+      operationId: payerPaymentStatus
+      summary: Look up own payment by EndToEndId (pain.002)
+      parameters:
+        - name: endToEndId
+          in: query
+          schema:
+            type: string
+            maxLength: 35
+      responses:
+        "200":
+          description: HTML status view
+
+  /payer:
+    get:
+      tags: [Pages]
+      operationId: payerDashboard
+      summary: Payer dashboard — balance and paginated statement
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: camt.053 pagination cursor
+        - name: payment
+          in: query
+          schema:
+            type: string
+            enum: [success]
+        - name: endToEndId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: HTML dashboard
+        "302":
+          description: Redirect to login when unauthenticated
+        "403":
+          description: Wrong role for payer portal
+        "404":
+          description: Seed account missing — setup hint page
 
   /support:
     get:

@@ -1,20 +1,24 @@
 <header class="site-header">
   <div class="container">
-    <div class="brand">
-      Payments Ledger
-      <small>ISO 20022 demo</small>
-    </div>
+    <a class="brand" href="<%= typeof user !== 'undefined' && user ? (user.role === 'support' ? '/support' : '/payer') : '/login' %>">
+      <%- include('brand-mark') %>
+      <span class="brand-text">
+        <span class="brand-name">AmazingPayments</span>
+        <span class="brand-tag">ISO 20022 · pain.001 · camt.053</span>
+      </span>
+    </a>
     <% if (typeof user !== 'undefined' && user) { %>
     <nav class="nav-links">
       <% if (user.role === 'payer') { %>
-      <a href="/payer">Dashboard</a>
-      <a href="/payer/payment/new">New payment</a>
+      <a class="nav-link<%= typeof currentPath !== 'undefined' && currentPath === '/payer' ? ' active' : '' %>" href="/payer">Dashboard</a>
+      <a class="nav-link<%= typeof currentPath !== 'undefined' && currentPath.startsWith('/payer/payment') ? ' active' : '' %>" href="/payer/payment/new">Send payment</a>
+      <a class="nav-link<%= typeof currentPath !== 'undefined' && currentPath.startsWith('/payer/payments') ? ' active' : '' %>" href="/payer/payments/status">Status</a>
       <% } %>
       <% if (user.role === 'support') { %>
-      <a href="/support">Search</a>
+      <a class="nav-link<%= typeof currentPath !== 'undefined' && currentPath.startsWith('/support') ? ' active' : '' %>" href="/support">Investigate</a>
       <% } %>
-      <a href="/api-docs/ledger" target="_blank" rel="noreferrer">API docs</a>
-      <form action="/logout" method="post" style="display:inline">
+      <a class="nav-link" href="/api-docs/ledger" target="_blank" rel="noreferrer">API</a>
+      <form class="nav-form" action="/logout" method="post">
         <button class="btn secondary" type="submit">Sign out</button>
       </form>
     </nav>
